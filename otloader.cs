@@ -92,7 +92,7 @@ namespace otloader
             isPatched = false;
             foreach (string server in clientServerList)
             {
-                if (Utils.PatchClientServer(server, "127.0.0.1", 7171))
+                if (Utils.PatchClientServer(server, editServer.Text, Convert.ToInt16(editPort.Text)))
                 {
                     isPatched = true;
                 }
