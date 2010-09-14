@@ -1,5 +1,3 @@
-#include "main.h"
-
 #include <cstring>
 #include <cstdlib>
 #include <sys/ptrace.h>

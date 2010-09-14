@@ -7,18 +7,28 @@ Project("{2857B73E-F847-4B02-9238-064979017E93}") = "ptrace", "ptrace\ptrace.cpr
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x86 = Debug|x86
-		Release|x86 = Release|x86
+		Windows - Debug|x86 = Windows - Debug|x86
+		Windows - Release|x86 = Windows - Release|x86
+		Linux - Release|x86 = Linux - Release|x86
+		Linux - Debug|x86 = Linux - Debug|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Debug|x86.ActiveCfg = Debug|x86
-		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Debug|x86.Build.0 = Debug|x86
-		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Release|x86.ActiveCfg = Release|x86
-		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Release|x86.Build.0 = Release|x86
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Debug|x86.Build.0 = Debug|Any CPU
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Release|x86.ActiveCfg = Release|Any CPU
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Release|x86.Build.0 = Release|Any CPU
+		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Linux - Debug|x86.ActiveCfg = Linux - Debug|x86
+		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Linux - Debug|x86.Build.0 = Linux - Debug|x86
+		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Linux - Release|x86.ActiveCfg = Linux - Release|x86
+		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Linux - Release|x86.Build.0 = Linux - Release|x86
+		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Windows - Debug|x86.ActiveCfg = Windows - Debug|x86
+		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Windows - Debug|x86.Build.0 = Windows - Debug|x86
+		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Windows - Release|x86.ActiveCfg = Windows - Release|x86
+		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Windows - Release|x86.Build.0 = Windows - Release|x86
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Debug|x86.ActiveCfg = Linux - Debug|x86
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Debug|x86.Build.0 = Linux - Debug|x86
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Release|x86.ActiveCfg = Linux - Release|x86
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Release|x86.Build.0 = Linux - Release|x86
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Windows - Debug|x86.ActiveCfg = Debug|Any CPU
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Windows - Debug|x86.Build.0 = Debug|Any CPU
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Windows - Release|x86.ActiveCfg = Release|Any CPU
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Windows - Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = otloader.csproj
