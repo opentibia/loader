@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
@@ -7,13 +7,12 @@ namespace otloader
 {
     class Utils
     {
-        [DllImport("USER32.DLL", SetLastError = true)]
-        private static extern IntPtr FindWindow(
-            string lpClassName,
-            string lpWindowName);
-
+		const string tibiaWindowName = "Tibia";
+		const string tibiaClassName = "TibiaClient";
+		
+#if WIN32
         [DllImport("Kernel32.dll", SetLastError = true)]
-        private static extern bool ReadProcessMemory
+        private static extern Int32 ReadProcessMemory
         (
             [In] IntPtr hProcess,
             [In] IntPtr lpBaseAddress,
@@ -23,7 +22,7 @@ namespace otloader
         );
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool WriteProcessMemory(
+        private static extern Int32 WriteProcessMemory(
             [In] IntPtr hProcess,
             [In] IntPtr lpBaseAddress,
             [In] byte[] lpBuffer,
@@ -31,6 +30,11 @@ namespace otloader
             [In, Out] ref UInt32 lpNumberOfBytesWritten
         );
 
+        [DllImport("USER32.DLL", SetLastError = true)]
+        private static extern IntPtr FindWindow(
+            string lpClassName,
+            string lpWindowName);
+		
         [DllImport("kernel32.dll")]
         static extern bool VirtualProtectEx(IntPtr hProcess, IntPtr lpAddress,
            UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
@@ -52,7 +56,52 @@ namespace otloader
         private static extern Int32 CloseHandle(
             IntPtr hObject
         );
+		
+		bool getAddressRange(
+			IntPtr hProcess,
+			UInt32 nIndex,
+			ref UInt32 nStartAddress,
+			ref UInt32 nEndAddress
+		)
+		{
+			nStartAddress = 0x00400000;
+			nEndAddress   = 0x7FFFFFFF - 0x00400000;
+		}
+#else
+		const string libpath = "./libptrace.so";
+			
+        [DllImport(libpath, SetLastError = true)]
+        private static extern Int32 ReadProcessMemory
+        (
+            [In] IntPtr hProcess,
+            [In] IntPtr lpBaseAddress,
+            [Out] byte[] lpBuffer,
+            [In] UInt32 nSize,
+            [In, Out] ref UInt32 lpNumberOfBytesRead
+        );
 
+        [DllImport(libpath, SetLastError = true)]
+        private static extern Int32 WriteProcessMemory(
+            [In] IntPtr hProcess,
+            [In] IntPtr lpBaseAddress,
+            [In] byte[] lpBuffer,
+            [In] UInt32 nSize,
+            [In, Out] ref UInt32 lpNumberOfBytesWritten
+        );
+
+		[DllImport(libpath, EntryPoint="PidOf")]
+        private static extern Int32 PidOf(
+			string lpWindowName
+		);
+		
+		[DllImport(libpath, EntryPoint="GetMemoryRange")]
+        private static extern bool GetMemoryRange(
+			[In] IntPtr hProcess,
+			[In] UInt32 nIndex,
+			[In, Out] ref UInt32 nStartAddress,
+			[In, Out] ref UInt32 nEndAddress
+		);
+#endif
         private static bool ByteArrayCompare(byte[] a1, UInt32 startOffset, byte[] a2, UInt32 compareLength)
         {
             if (a1.Length < compareLength || a2.Length < compareLength)
@@ -85,51 +134,66 @@ namespace otloader
         {
 	        outAddress = IntPtr.Zero;
 
-	        byte[] buffer = new byte[0x1000 * 32];
+	        byte[] buffer = new byte[0x4000 * 32];
 	        UInt32 bytesRead = 0;
 
-            Int64 startAddress = 0x00400000;
-            Int64 readPos = startAddress;
-            do
-            {
-                ReadProcessMemory(processHandle, (IntPtr)readPos, buffer, (UInt32)buffer.Length, ref bytesRead);
-
-                if (bytesRead != buffer.Length)
-                {
-                    return false;
-                }
-
-                for (UInt32 i = 0; i < buffer.Length; i++)
-                {
-                    if (ByteArrayCompare(buffer, i, bytePattern, (UInt32)bytePattern.Length))
-                    {
-                        outAddress = (IntPtr)(readPos + i);
-                        return true;
-                    }
-                }
-
-                readPos = readPos + buffer.Length - (bytePattern.Length);
-
-            } while (readPos < 0x7FFFFFFF);
+            //UInt32 startAddress = 0x00400000;
+			//UInt32 startAddress = 0x08048001;
+			//UInt32 startAddress = 0x857fd40;
+			//UInt32 startAddress = 0x08048001;
+			UInt32 addressIndex = 0;
+			UInt32 startAddress = 0;
+			UInt32 endAddress = 0;			
+			while(GetMemoryRange(processHandle, addressIndex, ref startAddress, ref endAddress))
+			{
+	            UInt32 readPos = startAddress;
+	            do
+	            {
+					ReadProcessMemory(processHandle, (IntPtr)readPos, buffer, (UInt32)buffer.Length, ref bytesRead);
+	
+					if(bytesRead < bytePattern.Length)
+					{
+						break;
+					}
+					
+	                for (UInt32 i = 0; i < bytesRead; i++)
+	                {
+	                    if (ByteArrayCompare(buffer, i, bytePattern, (UInt32)bytePattern.Length))
+	                    {
+	                        outAddress = (IntPtr)(readPos + i);
+	                        return true;
+	                    }
+	                }
+	
+					//Console.WriteLine(String.Format("Search: {0}", readPos));
+	                readPos = readPos + ((UInt32)buffer.Length) - ((UInt32)bytePattern.Length);
+	
+	            } while (readPos < endAddress);
+				
+				++addressIndex;
+			}
 
 	        return false;
         }
 
-        const string tibiaClassName = "TibiaClient";
-
         public static bool IsClientRunning()
         {
+#if WIN32
             IntPtr windowHandle = FindWindow(tibiaClassName, null);
             if (windowHandle == IntPtr.Zero)
             {
                 return false;
             }
 
-            return true;
+			return true;
+#else
+			return PidOf(tibiaWindowName) != 0;
+#endif
         }
 
         private static IntPtr GetProcessHandle()
         {
+#if WIN32
             IntPtr windowHandle = FindWindow(tibiaClassName, null);
             if (windowHandle == IntPtr.Zero)
             {
@@ -141,28 +205,42 @@ namespace otloader
             IntPtr processHandle = OpenProcess(0x1F0FFF, 1, processId);
 
             return processHandle;
+#else
+			return (IntPtr)PidOf(tibiaWindowName);
+#endif
         }
+            
+		public static Int32 CloseHandle(IntPtr hObject)
+		{
+#if WIN32
+			return CloseHandle(hObject);
+#endif
+			return 0;
+		}
 
         private static bool PatchMemory(IntPtr processHandle, IntPtr address, byte[] patchBytes, bool removeProtect)
         {
+#if WIN32
             const uint PAGE_EXECUTE_READWRITE = 0x40;
 
             uint lpfOldProtect = 0;
             if (removeProtect)
             {
-                VirtualProtectEx(processHandle, address, (UIntPtr)patchBytes.Length, PAGE_EXECUTE_READWRITE, out lpfOldProtect);
+                VirtualProtectEx(processHandle, address, (IntPtr)patchBytes.Length, PAGE_EXECUTE_READWRITE, out lpfOldProtect);
             }
-
+#endif
             UInt32 bytesWritten = 0;
-            bool result = WriteProcessMemory(processHandle, address, patchBytes, (UInt32)patchBytes.Length, ref bytesWritten);
+            Int32 result = WriteProcessMemory(processHandle, address, patchBytes, (UInt32)patchBytes.Length, ref bytesWritten);
 
+#if WIN32
             if (removeProtect)
             {
                 uint lpfDummy;
                 VirtualProtectEx(processHandle, address, (UIntPtr)patchBytes.Length, lpfOldProtect, out lpfDummy);
             }
+#endif
 
-            return result;
+            return result != 0;
         }
 
         public static bool PatchClientRSAKey(string oldRSAKey, string newRSAKey)
@@ -198,10 +276,10 @@ namespace otloader
                 return false;
             }
 
-            IntPtr address;
             byte[] byteOldServer = ToByteArray(oldServer);
             ResizeByteArray(ref byteOldServer, 100);
 
+			IntPtr address;
             if (!SearchBytes(processHandle, byteOldServer, out address))
             {
                 CloseHandle(processHandle);

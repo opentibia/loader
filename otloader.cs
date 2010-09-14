@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -67,44 +67,44 @@ namespace otloader
 
         private bool patchClient()
         {
-            if (!Utils.IsClientRunning())
-            {
-                MessageBox.Show("Could not find client!");
-                return false;
-            }
+			if (!Utils.IsClientRunning())
+			{
+				MessageBox.Show("Could not find client!");
+				return false;
+			}
+			
+			bool patchedClientRSA = false;
+			foreach (string RSAKey in clientRSAKeys)
+			{
+				if (Utils.PatchClientRSAKey(RSAKey, otservKey))
+				{
+					patchedClientRSA = true;
+					break;
+				}
+			}
+			
+			if(!patchedClientRSA)
+			{
+				MessageBox.Show("Could not patch RSA key!");
+				return false;
+			}
 
-            bool isPatched = false;
-            foreach (string RSAKey in clientRSAKeys)
-            {
-                if (Utils.PatchClientRSAKey(RSAKey, otservKey))
-                {
-                    isPatched = true;
-                    break;
-                }
-            }
+			bool patchedClientServer = false;
+			foreach(string server in clientServerList)
+			{
+	            if (Utils.PatchClientServer(server, editServer.Text, Convert.ToInt16(editPort.Text)))
+	            {
+					patchedClientServer = true;
+				}
+			}
+			
+			if(!patchedClientServer)
+			{
+				MessageBox.Show("Could not patch client!");
+				return false;
+			}
 
-            if (!isPatched)
-            {
-                MessageBox.Show("Could not replace RSA key!");
-                return false;
-            }
-
-            isPatched = false;
-            foreach (string server in clientServerList)
-            {
-                if (Utils.PatchClientServer(server, editServer.Text, Convert.ToInt16(editPort.Text)))
-                {
-                    isPatched = true;
-                }
-            }
-
-            if (!isPatched)
-            {
-                MessageBox.Show("Could not patch client!");
-                return false;
-            }
-
-            return true;
+			return true;
         }
 
         private void btnLoad_Click(object sender, EventArgs e)
