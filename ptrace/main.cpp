@@ -17,30 +17,30 @@ extern "C" int ReadProcessMemory(
 	unsigned int* lpNumberOfBytesRead)
 {
 	errno = 0;
-    if(ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0){
-	    perror("PTRACE_ATTACH");
-        return 0;
-    }
+	if(ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0){
+		perror("PTRACE_ATTACH");
+		return 0;
+	}
 	
 	waitpid(pid, NULL, WUNTRACED);
 
 	*lpNumberOfBytesRead = 0;
 	int peekData;
-    for(unsigned int i = 0; i <= nSize - sizeof(peekData); i += sizeof(peekData)){
-	    unsigned long addrPtr = lpBaseAddress + i;
-	    errno = 0;
-       	peekData = ptrace(PTRACE_PEEKDATA, pid, (void*)addrPtr, NULL);
-       	
-       	if(peekData == -1 && errno)
-       	{
-	       	ptrace(PTRACE_DETACH, pid, NULL, NULL);
-	       	perror("PTRACE_PEEKDATA");
-	       	return 0;
-       	}
-       	
-        memcpy(lpBuffer + i, &peekData, sizeof(peekData));
+	for(unsigned int i = 0; i <= nSize - sizeof(peekData); i += sizeof(peekData)){
+		unsigned long addrPtr = lpBaseAddress + i;
+		errno = 0;
+		peekData = ptrace(PTRACE_PEEKDATA, pid, (void*)addrPtr, NULL);
+		
+		if(peekData == -1 && errno)
+		{
+			ptrace(PTRACE_DETACH, pid, NULL, NULL);
+			perror("PTRACE_PEEKDATA");
+			return 0;
+		}
+		
+		memcpy(lpBuffer + i, &peekData, sizeof(peekData));
 		(*lpNumberOfBytesRead) += sizeof(peekData);
-    }
+	}
 
 	errno = 0;
 	if(ptrace(PTRACE_DETACH, pid, NULL, NULL) == -1){
@@ -48,7 +48,7 @@ extern "C" int ReadProcessMemory(
 		return 0;
 	}
 
-    return (*lpNumberOfBytesRead);
+	return (*lpNumberOfBytesRead);
 }
 
 extern "C" int WriteProcessMemory(
@@ -59,28 +59,28 @@ extern "C" int WriteProcessMemory(
 	unsigned int* lpNumberOfBytesWritten)
 {
 	errno = 0;
-    if(ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0){
-	    perror("PTRACE_ATTACH");
-        return 0;
-    }
+	if(ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0){
+		perror("PTRACE_ATTACH");
+		return 0;
+	}
 	
 	waitpid(pid, NULL, WUNTRACED);
 
 	*lpNumberOfBytesWritten = 0;
 	unsigned char pokeByte;
-    for(unsigned int i = 0; i < nSize; i += sizeof(pokeByte)){
-        memcpy(&pokeByte, &lpBuffer[i], 1);
-        
-	    unsigned long addrPtr = lpBaseAddress + i;
-	    errno = 0;
-        if(ptrace(PTRACE_POKEDATA, pid, (void*)addrPtr, pokeByte) < 0 && errno){
-	       	ptrace(PTRACE_DETACH, pid, NULL, NULL);
-	       	perror("PTRACE_POKEDATA");
-	       	return 0;
-        }
-       	
+	for(unsigned int i = 0; i < nSize; i += sizeof(pokeByte)){
+		memcpy(&pokeByte, &lpBuffer[i], 1);
+		
+		unsigned long addrPtr = lpBaseAddress + i;
+		errno = 0;
+		if(ptrace(PTRACE_POKEDATA, pid, (void*)addrPtr, pokeByte) < 0 && errno){
+			ptrace(PTRACE_DETACH, pid, NULL, NULL);
+			perror("PTRACE_POKEDATA");
+			return 0;
+		}
+		
 		(*lpNumberOfBytesWritten) += sizeof(pokeByte);
-    }
+	}
 
 	errno = 0;
 	if(ptrace(PTRACE_DETACH, pid, NULL, NULL) == -1){
@@ -88,7 +88,7 @@ extern "C" int WriteProcessMemory(
 		return 0;
 	}
 
-    return (*lpNumberOfBytesWritten);
+	return (*lpNumberOfBytesWritten);
 }
 
 extern "C" int PidOf(const char* lpWindowName)
