@@ -43,7 +43,7 @@
             this.btnLoad.Name = "btnLoad";
             this.btnLoad.Size = new System.Drawing.Size(89, 23);
             this.btnLoad.TabIndex = 2;
-            this.btnLoad.Text = "Load";
+            this.btnLoad.Text = "Patch";
             this.btnLoad.UseVisualStyleBackColor = true;
             this.btnLoad.Click += new System.EventHandler(this.btnLoad_Click);
             // 
@@ -83,7 +83,7 @@
             // checkBoxAutoAdd
             // 
             this.checkBoxAutoAdd.AutoSize = true;
-            this.checkBoxAutoAdd.Location = new System.Drawing.Point(138, 79);
+            this.checkBoxAutoAdd.Location = new System.Drawing.Point(134, 79);
             this.checkBoxAutoAdd.Name = "checkBoxAutoAdd";
             this.checkBoxAutoAdd.Size = new System.Drawing.Size(128, 17);
             this.checkBoxAutoAdd.TabIndex = 3;

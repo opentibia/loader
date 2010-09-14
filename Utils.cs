@@ -36,8 +36,12 @@ namespace otloader
             string lpWindowName);
 		
         [DllImport("kernel32.dll")]
-        static extern bool VirtualProtectEx(IntPtr hProcess, IntPtr lpAddress,
-           UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
+        static extern bool VirtualProtectEx(
+            IntPtr hProcess,
+            IntPtr lpAddress,
+            UIntPtr dwSize,
+            uint flNewProtect,
+            out uint lpflOldProtect);
         
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr OpenProcess(
@@ -56,16 +60,22 @@ namespace otloader
         private static extern Int32 CloseHandle(
             IntPtr hObject
         );
-		
-		bool getAddressRange(
+
+        private static bool GetMemoryRange(
 			IntPtr hProcess,
 			UInt32 nIndex,
 			ref UInt32 nStartAddress,
 			ref UInt32 nEndAddress
 		)
 		{
+            if (nIndex > 0)
+            {
+                return false;
+            }
+
 			nStartAddress = 0x00400000;
 			nEndAddress   = 0x7FFFFFFF - 0x00400000;
+            return true;
 		}
 #else
 		const string libpath = "./libptrace.so";
@@ -137,10 +147,6 @@ namespace otloader
 	        byte[] buffer = new byte[0x4000 * 32];
 	        UInt32 bytesRead = 0;
 
-            //UInt32 startAddress = 0x00400000;
-			//UInt32 startAddress = 0x08048001;
-			//UInt32 startAddress = 0x857fd40;
-			//UInt32 startAddress = 0x08048001;
 			UInt32 addressIndex = 0;
 			UInt32 startAddress = 0;
 			UInt32 endAddress = 0;			
@@ -209,14 +215,6 @@ namespace otloader
 			return (IntPtr)PidOf(tibiaWindowName);
 #endif
         }
-            
-		public static Int32 CloseHandle(IntPtr hObject)
-		{
-#if WIN32
-			return CloseHandle(hObject);
-#endif
-			return 0;
-		}
 
         private static bool PatchMemory(IntPtr processHandle, IntPtr address, byte[] patchBytes, bool removeProtect)
         {
@@ -226,7 +224,7 @@ namespace otloader
             uint lpfOldProtect = 0;
             if (removeProtect)
             {
-                VirtualProtectEx(processHandle, address, (IntPtr)patchBytes.Length, PAGE_EXECUTE_READWRITE, out lpfOldProtect);
+                VirtualProtectEx(processHandle, address, (UIntPtr)patchBytes.Length, PAGE_EXECUTE_READWRITE, out lpfOldProtect);
             }
 #endif
             UInt32 bytesWritten = 0;
@@ -254,7 +252,9 @@ namespace otloader
             IntPtr address;
             if (!SearchBytes(processHandle, ToByteArray(oldRSAKey), out address))
             {
+                #if WIN32
                 CloseHandle(processHandle);
+                #endif
                 return false;
             }
 
@@ -264,7 +264,9 @@ namespace otloader
                 return false;
             }
 
+            #if WIN32
             CloseHandle(processHandle);
+            #endif
             return true;
         }
 
@@ -282,7 +284,9 @@ namespace otloader
 			IntPtr address;
             if (!SearchBytes(processHandle, byteOldServer, out address))
             {
+                #if WIN32
                 CloseHandle(processHandle);
+                #endif
                 return false;
             }
 
@@ -304,7 +308,9 @@ namespace otloader
                 return false;
             }
 
+            #if WIN32
             CloseHandle(processHandle);
+            #endif
             return true;
         }
     }
