@@ -18,7 +18,9 @@ extern "C" int ReadProcessMemory(
 {
 	errno = 0;
 	if(ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0){
+#if DEBUG
 		perror("PTRACE_ATTACH");
+#endif
 		return 0;
 	}
 	
@@ -34,7 +36,9 @@ extern "C" int ReadProcessMemory(
 		if(peekData == -1 && errno)
 		{
 			ptrace(PTRACE_DETACH, pid, NULL, NULL);
+#if DEBUG
 			perror("PTRACE_PEEKDATA");
+#endif
 			return 0;
 		}
 		
@@ -44,7 +48,9 @@ extern "C" int ReadProcessMemory(
 
 	errno = 0;
 	if(ptrace(PTRACE_DETACH, pid, NULL, NULL) == -1){
+#if DEBUG
 		perror("PTRACE_DEATCH");
+#endif
 		return 0;
 	}
 
@@ -60,7 +66,9 @@ extern "C" int WriteProcessMemory(
 {
 	errno = 0;
 	if(ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0){
+#if DEBUG
 		perror("PTRACE_ATTACH");
+#endif
 		return 0;
 	}
 	
@@ -75,7 +83,9 @@ extern "C" int WriteProcessMemory(
 		errno = 0;
 		if(ptrace(PTRACE_POKEDATA, pid, (void*)addrPtr, pokeByte) < 0 && errno){
 			ptrace(PTRACE_DETACH, pid, NULL, NULL);
+#if DEBUG
 			perror("PTRACE_POKEDATA");
+#endif
 			return 0;
 		}
 		
@@ -84,7 +94,9 @@ extern "C" int WriteProcessMemory(
 
 	errno = 0;
 	if(ptrace(PTRACE_DETACH, pid, NULL, NULL) == -1){
+#if DEBUG
 		perror("PTRACE_DEATCH");
+#endif
 		return 0;
 	}
 
