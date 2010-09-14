@@ -134,22 +134,59 @@ namespace otloader
             Array.Resize<byte>(ref array, newSize);
 
         }
+		
         private static byte[] ToByteArray(string s)
         {
             System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
             return encoding.GetBytes(s);
         }
-
-        private static bool SearchBytes(IntPtr processHandle, byte[] bytePattern, out IntPtr outAddress)
+		
+        private static bool SearchBuffer(byte[] buffer, UInt32 bufferCount, byte[] bytePattern, ref UInt32 index)
+		{
+	        for(index = 0; index < bufferCount; ++index)
+	        {
+	            if (ByteArrayCompare(buffer, index, bytePattern, (UInt32)bytePattern.Length))
+	            {
+	                return true;
+	            }
+	        }
+			
+			return false;
+		}
+		
+		private static bool SearchBytes(
+			IntPtr processHandle,
+			byte[] bytePattern,
+			ref UInt32 hintAddress,
+			out IntPtr outAddress)
         {
 	        outAddress = IntPtr.Zero;
 
-	        byte[] buffer = new byte[0x4000 * 32];
+	        byte[] buffer = new byte[0x2000 * 32];
 	        UInt32 bytesRead = 0;
 
+			if(hintAddress != 0){
+				//try a quick search with the help of the hintAddress
+				ReadProcessMemory(processHandle, (IntPtr)hintAddress, buffer, (UInt32)buffer.Length, ref bytesRead);
+
+				if(bytesRead >= bytePattern.Length)
+				{
+					UInt32 bufferIndex = 0;
+					if(SearchBuffer(buffer, bytesRead, bytePattern, ref bufferIndex))
+					{
+						outAddress = (IntPtr)(hintAddress + bufferIndex);
+						return true;
+					}
+				}
+				
+				hintAddress = 0;
+			}
+
+			//Full memory scan
 			UInt32 addressIndex = 0;
 			UInt32 startAddress = 0;
-			UInt32 endAddress = 0;			
+			UInt32 endAddress = 0;
+
 			while(GetMemoryRange(processHandle, addressIndex, ref startAddress, ref endAddress))
 			{
 	            UInt32 readPos = startAddress;
@@ -159,27 +196,24 @@ namespace otloader
 	
 					if(bytesRead < bytePattern.Length)
 					{
+						// Not enough data to search in
 						break;
 					}
 					
-	                for (UInt32 i = 0; i < bytesRead; i++)
-	                {
-	                    if (ByteArrayCompare(buffer, i, bytePattern, (UInt32)bytePattern.Length))
-	                    {
-	                        outAddress = (IntPtr)(readPos + i);
-	                        return true;
-	                    }
-	                }
+					UInt32 bufferIndex = 0;
+					if(SearchBuffer(buffer, bytesRead, bytePattern, ref bufferIndex))
+					{
+						outAddress = (IntPtr)(readPos + bufferIndex);
+						return true;
+					}
 	
-					//Console.WriteLine(String.Format("Search: {0}", readPos));
 	                readPos = readPos + ((UInt32)buffer.Length) - ((UInt32)bytePattern.Length);
-	
 	            } while (readPos < endAddress);
 				
 				++addressIndex;
 			}
 
-	        return false;
+        	return false;
         }
 
         public static bool IsClientRunning()
@@ -250,7 +284,7 @@ namespace otloader
             }
 
             IntPtr address;
-            if (!SearchBytes(processHandle, ToByteArray(oldRSAKey), out address))
+            if (!SearchBytes(processHandle, ToByteArray(oldRSAKey), ref hintAddress, out address))
             {
                 #if WIN32
                 CloseHandle(processHandle);
@@ -269,7 +303,9 @@ namespace otloader
             #endif
             return true;
         }
-
+		
+		private static UInt32 hintAddress = 0;
+		
         public static bool PatchClientServer(string oldServer, string newServer, Int16 port)
         {
             IntPtr processHandle = GetProcessHandle();
@@ -282,7 +318,7 @@ namespace otloader
             ResizeByteArray(ref byteOldServer, 100);
 
 			IntPtr address;
-            if (!SearchBytes(processHandle, byteOldServer, out address))
+            if (!SearchBytes(processHandle, byteOldServer, ref hintAddress, out address))
             {
                 #if WIN32
                 CloseHandle(processHandle);
@@ -307,6 +343,11 @@ namespace otloader
             {
                 return false;
             }
+			
+			if(hintAddress == 0)
+			{
+				hintAddress = (((UInt32)address) - 1000);
+			}
 
             #if WIN32
             CloseHandle(processHandle);

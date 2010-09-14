@@ -33,6 +33,8 @@
     <SourceDirectory>.</SourceDirectory>
     <CompileTarget>SharedLibrary</CompileTarget>
     <OutputName>ptrace</OutputName>
+    <OptimizationLevel>3</OptimizationLevel>
+    <DefineSymbols>MONODEVELOP</DefineSymbols>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Linux - Debug|x86|AnyCPU' ">
     <OutputPath>bin\Debug\</OutputPath>
