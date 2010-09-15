@@ -21,14 +21,12 @@ Global
 		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Windows - Debug|x86.Build.0 = Windows - Debug|x86
 		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Windows - Release|x86.ActiveCfg = Windows - Release|x86
 		{508BCFD1-628A-49FF-818A-F17B3A31F765}.Windows - Release|x86.Build.0 = Windows - Release|x86
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Debug|x86.ActiveCfg = Linux - Debug|x86
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Debug|x86.Build.0 = Linux - Debug|x86
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Release|x86.ActiveCfg = Linux - Release|x86
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Release|x86.Build.0 = Linux - Release|x86
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Windows - Debug|x86.ActiveCfg = Debug|Any CPU
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Windows - Debug|x86.Build.0 = Debug|Any CPU
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Debug|x86.ActiveCfg = Linux - Debug|x86|AnyCPU
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Debug|x86.Build.0 = Linux - Debug|x86|AnyCPU
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Release|x86.ActiveCfg = Linux - Release|x86|AnyCPU
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Linux - Release|x86.Build.0 = Linux - Release|x86|AnyCPU
+		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Windows - Debug|x86.ActiveCfg = Release|Any CPU
 		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Windows - Release|x86.ActiveCfg = Release|Any CPU
-		{BDFC885E-7F81-4836-8006-DE20A00F6EF4}.Windows - Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = otloader.csproj

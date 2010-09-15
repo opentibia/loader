@@ -1,12 +1,10 @@
 #include <cstring>
 #include <cstdlib>
 #include <sys/ptrace.h>
-#include <string>
 #include <stdio.h>
 #include <sys/wait.h>
 #include <errno.h>
 #include <iostream>
-#include <iomanip>
 #include <elf.h>
 
 extern "C" int ReadProcessMemory(
