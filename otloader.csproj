@@ -81,14 +81,14 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Linux - Release|x86' ">
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\otloader\bin\Release\</OutputPath>
+    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="mkbundle -o otloader otloader.exe --deps -z" workingdir="${TargetDir}" />
+        <Command type="AfterBuild" command="mkbundle2 -o otloader otloader.exe --deps -z" workingdir="${TargetDir}" />
         <Command type="AfterBuild" command="rm otloader.exe" workingdir="${TargetDir}" />
         <Command type="AfterBuild" command="cp settings.xml ${TargetDir}" workingdir="${SolutionDir}" />
       </CustomCommands>
@@ -98,7 +98,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\otloader\bin\Debug\</OutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>

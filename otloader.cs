@@ -31,11 +31,37 @@ namespace otloader
 				base.Location = Properties.Settings.Default.Location;
 			}
 
+			System.IO.Directory.SetCurrentDirectory(Application.StartupPath);
+			if(!System.IO.File.Exists(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), Settings.SettingFilename)))
+			{
+				if(Properties.Settings.Default.SettingPath.Length > 0)
+				{
+					System.IO.Directory.SetCurrentDirectory(Properties.Settings.Default.SettingPath);
+				}
+			}
+
+			if(!settings.Load()){
+				FolderBrowserDialog dlg = new FolderBrowserDialog();
+				dlg.SelectedPath = Application.StartupPath;
+				dlg.ShowNewFolderButton = false;
+				dlg.Description = "Please locate the settings.xml, it should be located in the same folder as the program.";
+
+				do{
+					DialogResult res = dlg.ShowDialog();
+					if(res != DialogResult.OK){
+						Application.Exit();
+					}
+
+					System.IO.Directory.SetCurrentDirectory(dlg.SelectedPath);
+				}while(!settings.Load());
+
+				Properties.Settings.Default.SettingPath = dlg.SelectedPath;
+			}
 
 			clientServerList = settings.GetClientServerList();
 			clientRSAKeys = settings.GetRSAKeys();
-			otservKey = settings.GetOtservRSAKey();
-			checkBoxAutoAdd.Checked = settings.GetAutoAddServer();
+			otservKey = settings.OtservRSAKey;
+			checkBoxAutoAdd.Checked = settings.AutoAddServer;
 			storedServers = settings.GetServerList();
 			UpdateServerList();
 
@@ -48,7 +74,7 @@ namespace otloader
 		private void FormOtloader_FormClosing(object sender, FormClosingEventArgs e)
 		{
 			settings.UpdateServerList(storedServers);
-			settings.UpdateAutoSaveServer(checkBoxAutoAdd.Checked);
+			settings.AutoAddServer = checkBoxAutoAdd.Checked;
 			settings.Save();
 
 			Properties.Settings.Default.Location = base.DesktopBounds.Location;
@@ -144,7 +170,8 @@ namespace otloader
 
 		private void listBoxServers_SelectedValueChanged(object sender, EventArgs e)
 		{
-			if (listBoxServers.SelectedIndex != -1)
+			if (listBoxServers.SelectedIndex != -1 &&
+			    listBoxServers.SelectedIndex < storedServers.Count)
 			{
 				Server server = storedServers[listBoxServers.SelectedIndex];
 				editServer.Text = server.name;

@@ -13,32 +13,70 @@ namespace otloader
 
     public class Settings
     {
-        private string documentPath = (System.IO.Path.Combine(Application.StartupPath, "settings.xml"));
-        private XmlDocument xmlDocument = new XmlDocument();
+		public static string SettingFilename = "settings.xml";
 
+		private XmlDocument xmlDocument = new XmlDocument();
 
         public Settings()
         {
+        }
+
+		public bool Load()
+		{
+	        string path = (System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), SettingFilename));
             try
             {
-                xmlDocument.Load(this.documentPath);
+                xmlDocument.Load(path);
+				return true;
             }
             catch
             {
                 xmlDocument.LoadXml("<settings></settings>");
+				return false;
             }
-        }
+		}
 
-        public bool GetAutoAddServer()
+        public void Save()
         {
-            XmlNode node = xmlDocument.SelectSingleNode("/settings/autoaddserver");
-            if (node != null)
-            {
-                return Convert.ToInt32(node.InnerText) == 1;
-            }
-
-            return false;
+            xmlDocument.Save(SettingFilename);
         }
+
+		public string OtservRSAKey
+		{
+			get
+			{
+	            XmlNode node = xmlDocument.SelectSingleNode("/settings/otserv/publickey");
+	            if (node != null)
+	            {
+	                return node.InnerText;
+	            }
+
+	            return "";
+			}
+		}
+
+		public bool AutoAddServer
+		{
+			get
+			{
+	            XmlNode node = xmlDocument.SelectSingleNode("/settings/autoaddserver");
+	            if (node != null)
+	            {
+	                return Convert.ToInt32(node.InnerText) == 1;
+	            }
+
+	            return false;
+			}
+
+			set
+			{
+	            XmlNode node = xmlDocument.SelectSingleNode("/settings/autoaddserver");
+	            if (node != null)
+	            {
+	                node.InnerText = (value ? "1" : "0");
+	            }
+			}
+		}
 
         public List<string> GetClientServerList()
         {
@@ -72,17 +110,6 @@ namespace otloader
             return list;
         }
 
-        public string GetOtservRSAKey()
-        {
-            XmlNode node = xmlDocument.SelectSingleNode("/settings/otserv/publickey");
-            if (node != null)
-            {
-                return node.InnerText;
-            }
-
-            return "";
-        }
-
         public List<Server> GetServerList()
         {
             List<Server> list = new List<Server>();
@@ -106,15 +133,6 @@ namespace otloader
             return list;
         }
 
-        public void UpdateAutoSaveServer(bool autoAddServer)
-        {
-            XmlNode node = xmlDocument.SelectSingleNode("/settings/autoaddserver");
-            if (node != null)
-            {
-                node.InnerText = (autoAddServer ? "1" : "0");
-            }
-        }
-
         public void UpdateServerList(List<Server> servers)
         {
             XmlNode node = xmlDocument.SelectSingleNode("/settings/servers");
@@ -132,11 +150,6 @@ namespace otloader
 
                 node.AppendChild(serverNode);
             }            
-        }
-
-        public void Save()
-        {
-            xmlDocument.Save("settings.xml");
         }
     }
 }
