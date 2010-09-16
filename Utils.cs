@@ -304,7 +304,7 @@ namespace otloader
 		
 		private static UInt32 hintAddress = 0;
 		
-		public static bool PatchClientServer(string oldServer, string newServer, Int16 port)
+		public static bool PatchClientServer(string oldServer, string newServer, UInt16 port)
 		{
 			IntPtr processHandle = GetProcessHandle();
 			if (processHandle == IntPtr.Zero)

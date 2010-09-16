@@ -8,9 +8,20 @@ using System.Windows.Forms;
 
 namespace otloader
 {
+	enum PatchResult
+	{
+		CouldNotFindClient,
+		CouldNotPatchRSA,
+		CouldNotPatchServerList,
+		Success
+	};
+
 	public partial class FormOtloader : Form
 	{
 		private otloader.Settings settings = new otloader.Settings();
+
+		string prevPatchedServer = "";
+		bool isClientPatched = false;
 
 		List<string> clientServerList;
 		List<string> clientRSAKeys;
@@ -91,46 +102,54 @@ namespace otloader
 			}
 		}
 
-		private bool patchClient()
+		private PatchResult patchClient()
 		{
 			if (!Utils.IsClientRunning())
 			{
-				MessageBox.Show("Could not find client!");
-				return false;
-			}
-			
-			bool patchedClientRSA = false;
-			foreach (string RSAKey in clientRSAKeys)
-			{
-				if (Utils.PatchClientRSAKey(RSAKey, otservKey))
-				{
-					patchedClientRSA = true;
-					break;
-				}
-			}
-			
-			if(!patchedClientRSA)
-			{
-				MessageBox.Show("Could not patch RSA key!");
-				return false;
+				return PatchResult.CouldNotFindClient;
 			}
 
-			bool patchedClientServer = false;
-			foreach(string server in clientServerList)
+			if (!isClientPatched)
 			{
-				if (Utils.PatchClientServer(server, editServer.Text, Convert.ToInt16(editPort.Text)))
+				bool patchedClientRSA = false;
+				foreach (string RSAKey in clientRSAKeys)
 				{
-					patchedClientServer = true;
+					if (Utils.PatchClientRSAKey(RSAKey, otservKey))
+					{
+						patchedClientRSA = true;
+						break;
+					}
+				}
+
+				if (!patchedClientRSA)
+				{
+					return PatchResult.CouldNotPatchRSA;
+				}
+
+				bool patchedClientServer = false;
+				foreach (string server in clientServerList)
+				{
+					if (Utils.PatchClientServer(server, editServer.Text, Convert.ToUInt16(editPort.Text)))
+					{
+						patchedClientServer = true;
+					}
+				}
+
+				if (!patchedClientServer)
+				{
+					return PatchResult.CouldNotPatchServerList;
 				}
 			}
-			
-			if(!patchedClientServer)
+			else
 			{
-				MessageBox.Show("Could not patch client!");
-				return false;
+				//Client is already patched, so just replace the previous server host and port
+				if (Utils.PatchClientServer(prevPatchedServer, editServer.Text, Convert.ToUInt16(editPort.Text)))
+				{
+					return PatchResult.Success;
+				}
 			}
 
-			return true;
+			return PatchResult.Success;
 		}
 
 		private void btnLoad_Click(object sender, EventArgs e)
@@ -157,7 +176,21 @@ namespace otloader
 				}
 			}
 
-			patchClient();
+			PatchResult result = patchClient();
+
+			switch (result)
+			{
+				case PatchResult.CouldNotFindClient: MessageBox.Show("Could not find client!"); break;
+				case PatchResult.CouldNotPatchRSA: MessageBox.Show("Could not patch RSA key!"); break;
+				case PatchResult.CouldNotPatchServerList: MessageBox.Show("Could not patch server list!"); break;
+				case PatchResult.Success:
+					{
+						prevPatchedServer = editServer.Text;
+						isClientPatched = true;
+						break;
+					}
+				default: break;
+			}
 		}
 
 		private void editPort_KeyPress(object sender, KeyPressEventArgs e)
