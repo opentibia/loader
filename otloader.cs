@@ -139,17 +139,19 @@ namespace otloader
 				{
 					return PatchResult.CouldNotPatchServerList;
 				}
+
+				return PatchResult.Success;
 			}
 			else
 			{
 				//Client is already patched, so just replace the previous server host and port
-				if (Utils.PatchClientServer(prevPatchedServer, editServer.Text, Convert.ToUInt16(editPort.Text)))
+				if (!Utils.PatchClientServer(prevPatchedServer, editServer.Text, Convert.ToUInt16(editPort.Text)))
 				{
-					return PatchResult.Success;
+					return PatchResult.CouldNotPatchServerList;	
 				}
-			}
 
-			return PatchResult.Success;
+				return PatchResult.Success;
+			}
 		}
 
 		private void btnLoad_Click(object sender, EventArgs e)
