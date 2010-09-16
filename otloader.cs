@@ -109,49 +109,44 @@ namespace otloader
 				return PatchResult.CouldNotFindClient;
 			}
 
-			if (!isClientPatched)
+			bool patchedClientRSA = false;
+			foreach (string RSAKey in clientRSAKeys)
 			{
-				bool patchedClientRSA = false;
-				foreach (string RSAKey in clientRSAKeys)
+				if (Utils.PatchClientRSAKey(RSAKey, otservKey))
 				{
-					if (Utils.PatchClientRSAKey(RSAKey, otservKey))
-					{
-						patchedClientRSA = true;
-						break;
-					}
+					patchedClientRSA = true;
+					break;
 				}
-
-				if (!patchedClientRSA)
-				{
-					return PatchResult.CouldNotPatchRSA;
-				}
-
-				bool patchedClientServer = false;
-				foreach (string server in clientServerList)
-				{
-					if (Utils.PatchClientServer(server, editServer.Text, Convert.ToUInt16(editPort.Text)))
-					{
-						patchedClientServer = true;
-					}
-				}
-
-				if (!patchedClientServer)
-				{
-					return PatchResult.CouldNotPatchServerList;
-				}
-
-				return PatchResult.Success;
 			}
-			else
+
+			if (!patchedClientRSA && !isClientPatched)
 			{
-				//Client is already patched, so just replace the previous server host and port
-				if (!Utils.PatchClientServer(prevPatchedServer, editServer.Text, Convert.ToUInt16(editPort.Text)))
-				{
-					return PatchResult.CouldNotPatchServerList;	
-				}
-
-				return PatchResult.Success;
+				return PatchResult.CouldNotPatchRSA;
 			}
+
+			if(isClientPatched)
+			{
+				if (Utils.PatchClientServer(prevPatchedServer, editServer.Text, Convert.ToUInt16(editPort.Text)))
+				{
+					return PatchResult.Success;
+				}
+			}
+
+			bool patchedClientServer = false;
+			foreach (string server in clientServerList)
+			{
+				if (Utils.PatchClientServer(server, editServer.Text, Convert.ToUInt16(editPort.Text)))
+				{
+					patchedClientServer = true;
+				}
+			}
+
+			if (!patchedClientServer)
+			{
+				return PatchResult.CouldNotPatchServerList;
+			}
+
+			return PatchResult.Success;
 		}
 
 		private void btnLoad_Click(object sender, EventArgs e)
