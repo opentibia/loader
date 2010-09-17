@@ -7,14 +7,40 @@ namespace otloader
 {
     public class Server
     {
-        public string name;
-        public UInt16 port;
+		public Server()
+		{
+		}
+
+		public Server(string _name)
+		{
+			name = _name;
+		}
+
+		public Server(string _name, UInt16 _port)
+		{
+			name = _name;
+			port = _port;
+		}
+
+		public Server(string _name, string _port)
+		{
+			name = _name;
+			try
+			{
+				port = UInt16.Parse(_port);
+			}
+			catch
+			{
+			}
+		}
+
+        public string name = "127.0.0.1";
+        public UInt16 port = 7171;
     }
 
     public class Settings
     {
 		public static string SettingFilename = "settings.xml";
-
 		private XmlDocument xmlDocument = new XmlDocument();
 
         public Settings()
@@ -62,7 +88,13 @@ namespace otloader
 	            XmlNode node = xmlDocument.SelectSingleNode("/settings/autoaddserver");
 	            if (node != null)
 	            {
-	                return Convert.ToInt32(node.InnerText) == 1;
+					try
+					{
+						return Int32.Parse(node.InnerText) == 1;
+					}
+					catch
+					{
+					}
 	            }
 
 	            return false;
@@ -119,13 +151,20 @@ namespace otloader
             {
                 foreach (XmlNode node in nodes)
                 {
-                    Server server = new Server();
-                    server.name = node.InnerText;
+                    Server server = new Server(node.InnerText);
                     XmlAttribute attribute = node.Attributes["port"];
                     if (attribute != null)
                     {
-                        server.port = Convert.ToUInt16(attribute.Value);
+						try
+						{
+							server.port = UInt16.Parse(attribute.Value);
+						}
+						catch
+						{
+							server.port = 7171;
+						}
                     }
+
                     list.Add(server);
                 }
             }
@@ -136,7 +175,8 @@ namespace otloader
         public void UpdateServerList(List<Server> servers)
         {
             XmlNode node = xmlDocument.SelectSingleNode("/settings/servers");
-            if(node != null){
+            if(node != null)
+			{
                 node.RemoveAll();
             }
 
@@ -144,10 +184,11 @@ namespace otloader
             {
                 XmlNode serverNode = xmlDocument.CreateNode(XmlNodeType.Element, "server", "");
                 serverNode.InnerText = server.name;
+	
                 XmlAttribute attribute = xmlDocument.CreateAttribute("port");
                 attribute.Value = server.port.ToString();
-                serverNode.Attributes.Append(attribute);
 
+                serverNode.Attributes.Append(attribute);
                 node.AppendChild(serverNode);
             }            
         }

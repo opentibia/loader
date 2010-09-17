@@ -3,10 +3,27 @@ using System.Runtime.InteropServices;
 
 namespace otloader
 {
+	enum PatchResult
+	{
+		Dummy,
+		CouldNotFindClient,
+		CouldNotFindRSA,
+		CouldNotPatchRSA,
+		CouldNotFindServer,
+		CouldNotPatchServer,
+		CouldNotPatchServerList,
+		CouldNotPatchPort,
+		AlreadyPatched,
+		AlreadyPatchedNotOwned,
+		Success
+	};
+
 	class Utils
 	{
-		const string tibiaWindowName = "Tibia";
-		const string tibiaClassName = "TibiaClient";
+		private static UInt32 hintAddress = 0;
+
+		private const string tibiaWindowName = "Tibia";
+		private const string tibiaClassName = "TibiaClient";
 		
 #if WIN32
 		[DllImport("Kernel32.dll", SetLastError = true)]
@@ -38,8 +55,8 @@ namespace otloader
 			IntPtr hProcess,
 			IntPtr lpAddress,
 			UIntPtr dwSize,
-			uint flNewProtect,
-			out uint lpflOldProtect);
+			UInt32 flNewProtect,
+			out UInt32 lpflOldProtect);
 		
 		[DllImport("kernel32.dll", SetLastError = true)]
 		private static extern IntPtr OpenProcess(
@@ -51,7 +68,7 @@ namespace otloader
 		[DllImport("user32.dll", SetLastError = true)]
 		private static extern uint GetWindowThreadProcessId(
 			IntPtr hWnd,
-			out uint lpdwProcessId
+			out UInt32 lpdwProcessId
 		);
 
 		[DllImport("kernel32.dll", SetLastError = true)]
@@ -77,7 +94,7 @@ namespace otloader
 		}
 #else
 		const string libpath = "./libptrace.so";
-			
+
 		[DllImport(libpath, SetLastError = true)]
 		private static extern Int32 ReadProcessMemory
 		(
@@ -115,7 +132,7 @@ namespace otloader
 			if (a1.Length < compareLength || a2.Length < compareLength)
 				return false;
 
-			for (int i = 0; i < compareLength; i++)
+			for (Int32 i = 0; i < compareLength; i++)
 			{
 				if (startOffset + i >= a1.Length)
 					return false;
@@ -158,15 +175,14 @@ namespace otloader
 			ref UInt32 hintAddress,
 			out IntPtr outAddress)
 		{
-			outAddress = IntPtr.Zero;
-
 			byte[] buffer = new byte[0x2000 * 32];
 			UInt32 bytesRead = 0;
 
-			if(hintAddress != 0){
+			outAddress = IntPtr.Zero;
+			if(hintAddress != 0)
+			{
 				//try a quick search with the help of the hintAddress
 				ReadProcessMemory(processHandle, (IntPtr)hintAddress, buffer, (UInt32)buffer.Length, ref bytesRead);
-
 				if(bytesRead >= bytePattern.Length)
 				{
 					UInt32 bufferIndex = 0;
@@ -191,7 +207,6 @@ namespace otloader
 				do
 				{
 					ReadProcessMemory(processHandle, (IntPtr)readPos, buffer, (UInt32)buffer.Length, ref bytesRead);
-	
 					if(bytesRead < bytePattern.Length)
 					{
 						// Not enough data to search in
@@ -206,66 +221,45 @@ namespace otloader
 					}
 	
 					readPos = readPos + ((UInt32)buffer.Length) - ((UInt32)bytePattern.Length);
-				} while (readPos < endAddress);
-				
+				}
+				while (readPos < endAddress);
 				++addressIndex;
 			}
 
 			return false;
 		}
 
-		public static bool IsClientRunning()
-		{
-#if WIN32
-			IntPtr windowHandle = FindWindow(tibiaClassName, null);
-			if (windowHandle == IntPtr.Zero)
-			{
-				return false;
-			}
-
-			return true;
-#else
-			return PidOf(tibiaWindowName) != 0;
-#endif
-		}
-
 		private static IntPtr GetProcessHandle()
 		{
 #if WIN32
-			IntPtr windowHandle = FindWindow(tibiaClassName, null);
-			if (windowHandle == IntPtr.Zero)
+			UInt32 processId = GetProcessId();
+			if (processId == 0)
 			{
 				return IntPtr.Zero;
 			}
 
-			UInt32 processId;
-			GetWindowThreadProcessId(windowHandle, out processId);
-			IntPtr processHandle = OpenProcess(0x1F0FFF, 1, processId);
-
-			return processHandle;
+			return OpenProcess(0x1F0FFF, 1, processId);
 #else
-			return (IntPtr)PidOf(tibiaWindowName);
+			return (IntPtr)GetProcessId();
 #endif
 		}
 
 		private static bool PatchMemory(IntPtr processHandle, IntPtr address, byte[] patchBytes, bool removeProtect)
 		{
 #if WIN32
-			const uint PAGE_EXECUTE_READWRITE = 0x40;
-
-			uint lpfOldProtect = 0;
+			UInt32 lpfOldProtect = 0;
 			if (removeProtect)
 			{
+				const uint PAGE_EXECUTE_READWRITE = 0x40;
 				VirtualProtectEx(processHandle, address, (UIntPtr)patchBytes.Length, PAGE_EXECUTE_READWRITE, out lpfOldProtect);
 			}
 #endif
 			UInt32 bytesWritten = 0;
 			Int32 result = WriteProcessMemory(processHandle, address, patchBytes, (UInt32)patchBytes.Length, ref bytesWritten);
-
 #if WIN32
 			if (removeProtect)
 			{
-				uint lpfDummy;
+				UInt32 lpfDummy;
 				VirtualProtectEx(processHandle, address, (UIntPtr)patchBytes.Length, lpfOldProtect, out lpfDummy);
 			}
 #endif
@@ -273,43 +267,69 @@ namespace otloader
 			return result != 0;
 		}
 
-		public static bool PatchClientRSAKey(string oldRSAKey, string newRSAKey)
+		public static UInt32 GetProcessId()
+		{
+#if WIN32
+			IntPtr windowHandle = FindWindow(tibiaClassName, null);
+			if (windowHandle == IntPtr.Zero)
+			{
+				return 0;
+			}
+
+			UInt32 processId;
+			GetWindowThreadProcessId(windowHandle, out processId);
+			return processId;
+#else
+			return PidOf(tibiaWindowName);
+#endif
+		}
+
+		public static PatchResult PatchClientRSAKey(string oldRSAKey, string newRSAKey)
 		{
 			IntPtr processHandle = GetProcessHandle();
 			if (processHandle == IntPtr.Zero)
 			{
-				return false;
+				return PatchResult.CouldNotFindClient;
 			}
 
 			IntPtr address;
 			if (!SearchBytes(processHandle, ToByteArray(oldRSAKey), ref hintAddress, out address))
 			{
+				if (!SearchBytes(processHandle, ToByteArray(newRSAKey), ref hintAddress, out address))
+				{
+					#if WIN32
+					CloseHandle(processHandle);
+					#endif
+					return PatchResult.CouldNotFindRSA;
+				}
+
 				#if WIN32
 				CloseHandle(processHandle);
 				#endif
-				return false;
+				return PatchResult.AlreadyPatched;
 			}
 
 			byte[] byteRSAKey = ToByteArray(newRSAKey);
 			if (!PatchMemory(processHandle, address, byteRSAKey, true))
 			{
-				return false;
+				#if WIN32
+				CloseHandle(processHandle);
+				#endif
+				return PatchResult.CouldNotPatchRSA;
 			}
 
 			#if WIN32
 			CloseHandle(processHandle);
 			#endif
-			return true;
+			return PatchResult.Success;
 		}
-		
-		private static UInt32 hintAddress = 0;
-		
-		public static bool PatchClientServer(string oldServer, string newServer, UInt16 port)
+
+		public static PatchResult PatchClientServer(string oldServer, string newServer, UInt16 port)
 		{
 			IntPtr processHandle = GetProcessHandle();
 			if (processHandle == IntPtr.Zero)
 			{
-				return false;
+				return PatchResult.CouldNotFindClient;
 			}
 
 			byte[] byteOldServer = ToByteArray(oldServer);
@@ -321,11 +341,10 @@ namespace otloader
 				#if WIN32
 				CloseHandle(processHandle);
 				#endif
-				return false;
+				return PatchResult.CouldNotFindServer;
 			}
 
 			byte[] byteNewServer = ToByteArray(newServer);
-			
 			if (byteNewServer.Length < byteOldServer.Length)
 			{
 				ResizeByteArray(ref byteNewServer, byteOldServer.Length);
@@ -333,24 +352,24 @@ namespace otloader
 
 			if (!PatchMemory(processHandle, address, byteNewServer, false))
 			{
-				return false;
+				return PatchResult.CouldNotPatchServer;
 			}
 
 			byte[] bytePort = BitConverter.GetBytes(port);
-			if (!PatchMemory(processHandle, (IntPtr)((int)address + byteNewServer.Length), bytePort, false))
+			if (!PatchMemory(processHandle, (IntPtr)((Int32)address + byteNewServer.Length), bytePort, false))
 			{
-				return false;
+				return PatchResult.CouldNotPatchPort;
 			}
 			
 			if(hintAddress == 0)
 			{
-				hintAddress = (((UInt32)address) - 1000);
+				hintAddress = ((UInt32)address) - 1000;
 			}
 
 			#if WIN32
 			CloseHandle(processHandle);
 			#endif
-			return true;
+			return PatchResult.Success;
 		}
 	}
 }

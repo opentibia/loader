@@ -59,6 +59,7 @@
 			// editServer
 			// 
 			this.editServer.Location = new System.Drawing.Point(56, 26);
+			this.editServer.MaxLength = 255;
 			this.editServer.Name = "editServer";
 			this.editServer.Size = new System.Drawing.Size(198, 20);
 			this.editServer.TabIndex = 0;
@@ -75,6 +76,7 @@
 			// editPort
 			// 
 			this.editPort.Location = new System.Drawing.Point(56, 50);
+			this.editPort.MaxLength = 5;
 			this.editPort.Name = "editPort";
 			this.editPort.Size = new System.Drawing.Size(56, 20);
 			this.editPort.TabIndex = 1;

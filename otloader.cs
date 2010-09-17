@@ -8,20 +8,13 @@ using System.Windows.Forms;
 
 namespace otloader
 {
-	enum PatchResult
-	{
-		CouldNotFindClient,
-		CouldNotPatchRSA,
-		CouldNotPatchServerList,
-		Success
-	};
-
 	public partial class FormOtloader : Form
 	{
 		private otloader.Settings settings = new otloader.Settings();
 		private Timer timer = new Timer();
 
-		private string prevPatchedServer;
+		private Server prevPatchedServer = new Server("", 0);
+		private UInt32 prevPatchedClient;
 		private bool isClientPatched = false;
 
 		private List<string> clientServerList;
@@ -75,10 +68,10 @@ namespace otloader
 			clientRSAKeys = settings.GetRSAKeys();
 			otservKey = settings.OtservRSAKey;
 
-			checkBoxAutoAdd.Checked = settings.AutoAddServer;
 			storedServers = settings.GetServerList();
-
 			UpdateServerList();
+
+			checkBoxAutoAdd.Checked = settings.AutoAddServer;
 			if (listBoxServers.Items.Count > 0)
 			{
 				listBoxServers.SelectedIndex = 0;
@@ -98,62 +91,6 @@ namespace otloader
 			}
 		}
 
-		private void UpdateServerList()
-		{
-			listBoxServers.Items.Clear();
-			foreach (Server server in storedServers)
-			{
-				listBoxServers.Items.Add(server.name + ":" + server.port);
-			}
-		}
-
-		private PatchResult PatchClient()
-		{
-			if (!Utils.IsClientRunning()) 
-			{
-				return PatchResult.CouldNotFindClient;
-			}
-
-			bool patchedClientRSA = false;
-			foreach (string RSAKey in clientRSAKeys)
-			{
-				if (Utils.PatchClientRSAKey(RSAKey, otservKey))
-				{
-					patchedClientRSA = true;
-					break;
-				}
-			}
-
-			if (!patchedClientRSA && !isClientPatched)
-			{
-				return PatchResult.CouldNotPatchRSA;
-			}
-
-			if(isClientPatched && !patchedClientRSA)
-			{
-				if (Utils.PatchClientServer(prevPatchedServer, editServer.Text, Convert.ToUInt16(editPort.Text)))
-				{
-					return PatchResult.Success;
-				}
-			}
-
-			bool patchedClientServer = false;
-			foreach (string server in clientServerList)
-			{
-				if (Utils.PatchClientServer(server, editServer.Text, Convert.ToUInt16(editPort.Text)))
-				{
-					patchedClientServer = true;
-				}
-			}
-
-			if (!patchedClientServer)
-			{
-				return PatchResult.CouldNotPatchServerList;
-			}
-
-			return PatchResult.Success;
-		}
-
 		private void btnLoad_Click(object sender, EventArgs e)
 		{
 			PatchResult result = PatchClient();
@@ -162,6 +99,14 @@ namespace otloader
 				case PatchResult.CouldNotFindClient: toolStripStatusLabel1.Text = "Could not find client!"; break;
 				case PatchResult.CouldNotPatchRSA: toolStripStatusLabel1.Text = "Could not patch RSA key!"; break;
 				case PatchResult.CouldNotPatchServerList: toolStripStatusLabel1.Text = "Could not patch server list!"; break;
+				case PatchResult.CouldNotPatchServer: toolStripStatusLabel1.Text = "Could not patch new server!"; break;
+				case PatchResult.AlreadyPatched: toolStripStatusLabel1.Text = "Client already patched!"; break;
+				case PatchResult.AlreadyPatchedNotOwned:
+					{
+						toolStripStatusLabel1.Text = "Client already patched by another instance!";
+						toolTip1.Show("To use loader you must restart the client.", btnLoad, 5000);
+						break;
+					}
 				case PatchResult.Success:
 					{
 						toolStripStatusLabel1.Text = "Client patched.";
@@ -170,7 +115,6 @@ namespace otloader
 							AddFavorite(true);
 						}
 
-						prevPatchedServer = editServer.Text;
 						isClientPatched = true;
 						break;
 					}
@@ -183,33 +127,6 @@ namespace otloader
 		private void btnFavorite_Click(object sender, EventArgs e)
 		{
 			AddFavorite(false);
-		}
-
-		private void AddFavorite(bool patching)
-		{
-			bool isStored = false;
-			foreach (Server server in storedServers)
-			{
-				if (server.name == editServer.Text && server.port.ToString() == editPort.Text)
-				{
-					isStored = true;
-					break;
-				}
-			}
-
-			if (!isStored)
-			{
-				Server server = new Server();
-				server.name = editServer.Text;
-				server.port = Convert.ToUInt16(editPort.Text);
-
-				storedServers.Add(server);
-				UpdateServerList();
-				if(!patching)
-					toolStripStatusLabel1.Text = "Favorite added.";
-			}
-			else if(!patching)
-				toolStripStatusLabel1.Text = "Server is already on favorite list!";
 		}
 
 		private void editPort_KeyPress(object sender, KeyPressEventArgs e)
@@ -304,7 +221,114 @@ namespace otloader
 
 		private void toolStripStatusLabel1_TextChanged(object sender, EventArgs e)
 		{
-			Wait(timer, 3000, (o, a) => toolStripStatusLabel1.Text = "");
+			if(timer.Enabled)
+				timer.Stop();
+
+			Wait(timer, 10000, (o, a) => toolStripStatusLabel1.Text = "");
+		}
+
+		private void UpdateServerList()
+		{
+			listBoxServers.Items.Clear();
+			foreach (Server server in storedServers)
+			{
+				listBoxServers.Items.Add(server.name + ":" + server.port);
+			}
+		}
+
+		private PatchResult PatchClient()
+		{
+			UInt32 client = Utils.GetProcessId();
+			if (client == 0) 
+			{
+				return PatchResult.CouldNotFindClient;
+			}
+
+			if (client != prevPatchedClient)
+			{
+				isClientPatched = false;
+			}
+
+			UInt16 port = UInt16.Parse(editPort.Text);
+			if (!isClientPatched)
+			{
+				PatchResult patchResult = PatchResult.Dummy;
+				foreach (string RSAKey in clientRSAKeys)
+				{
+					if ((patchResult = Utils.PatchClientRSAKey(RSAKey, otservKey)) == PatchResult.Success)
+					{
+						break;
+					}
+				}
+
+				if (patchResult == PatchResult.AlreadyPatched)
+				{
+					return PatchResult.AlreadyPatchedNotOwned;
+				}
+				else if (patchResult != PatchResult.Success)
+				{
+					return PatchResult.CouldNotPatchRSA;
+				}
+
+				bool patched = false;
+				foreach (string server in clientServerList)
+				{
+					if(Utils.PatchClientServer(server, editServer.Text, port) == PatchResult.Success)
+					{
+						patched = true;
+					}
+				}
+
+				if (!patched)
+				{
+					return PatchResult.CouldNotPatchServerList;
+				}
+			}
+			else if(editServer.Text == prevPatchedServer.name &&
+				port == prevPatchedServer.port)
+			{
+				return PatchResult.AlreadyPatched;
+			}
+			else if(Utils.PatchClientServer(prevPatchedServer.name, editServer.Text, port) != PatchResult.Success)
+			{
+				return PatchResult.CouldNotPatchServer;
+			}
+
+			prevPatchedServer.name = editServer.Text;
+			prevPatchedServer.port = port;
+			prevPatchedClient = client;
+
+			isClientPatched = true;
+			return PatchResult.Success;
+		}
+
+		private void AddFavorite(bool patching)
+		{
+			bool isStored = false;
+			foreach (Server server in storedServers)
+			{
+				if (server.name == editServer.Text && server.port.ToString() == editPort.Text)
+				{
+					isStored = true;
+					break;
+				}
+			}
+
+			if (!isStored)
+			{
+				Server server = new Server(editServer.Text, UInt16.Parse(editPort.Text));
+				storedServers.Add(server);
+
+				UpdateServerList();
+				if(!patching)
+				{
+					toolStripStatusLabel1.Text = "Favorite added.";
+				}
+			}
+			else if(!patching)
+			{
+				toolStripStatusLabel1.Text = "Server is already on favorite list!";
+			}
 		}
 
 		static void Wait(Timer t, Int32 interval, EventHandler action)
