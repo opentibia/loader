@@ -159,7 +159,7 @@ namespace otloader
 				return PatchResult.CouldNotPatchRSA;
 			}
 
-			if(isClientPatched)
+			if(isClientPatched && !patchedClientRSA)
 			{
 				if (Utils.PatchClientServer(prevPatchedServer, editServer.Text, Convert.ToUInt16(editPort.Text)))
 				{
