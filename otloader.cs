@@ -19,6 +19,7 @@ namespace otloader
 	public partial class FormOtloader : Form
 	{
 		private otloader.Settings settings = new otloader.Settings();
+		private Timer timer = new Timer();
 
 		private string prevPatchedServer;
 		private bool isClientPatched = false;
@@ -106,7 +107,7 @@ namespace otloader
 			}
 		}
 
-		private PatchResult patchClient()
+		private PatchResult PatchClient()
 		{
 			if (!Utils.IsClientRunning()) 
 			{
@@ -155,17 +156,18 @@ namespace otloader
 
 		private void btnLoad_Click(object sender, EventArgs e)
 		{
-			PatchResult result = patchClient();
+			PatchResult result = PatchClient();
 			switch (result)
 			{
-				case PatchResult.CouldNotFindClient: MessageBox.Show("Could not find client!"); break;
-				case PatchResult.CouldNotPatchRSA: MessageBox.Show("Could not patch RSA key!"); break;
-				case PatchResult.CouldNotPatchServerList: MessageBox.Show("Could not patch server list!"); break;
+				case PatchResult.CouldNotFindClient: toolStripStatusLabel1.Text = "Could not find client!"; break;
+				case PatchResult.CouldNotPatchRSA: toolStripStatusLabel1.Text = "Could not patch RSA key!"; break;
+				case PatchResult.CouldNotPatchServerList: toolStripStatusLabel1.Text = "Could not patch server list!"; break;
 				case PatchResult.Success:
 					{
+						toolStripStatusLabel1.Text = "Client patched.";
 						if (checkBoxAutoAdd.Checked)
 						{
-							btnFavorite_Click(sender, e);
+							AddFavorite(true);
 						}
 
 						prevPatchedServer = editServer.Text;
@@ -179,6 +181,11 @@ namespace otloader
 		}
 
 		private void btnFavorite_Click(object sender, EventArgs e)
+		{
+			AddFavorite(false);
+		}
+
+		private void AddFavorite(bool patching)
 		{
 			bool isStored = false;
 			foreach (Server server in storedServers)
@@ -198,7 +205,11 @@ namespace otloader
 
 				storedServers.Add(server);
 				UpdateServerList();
+				if(!patching)
+					toolStripStatusLabel1.Text = "Favorite added.";
 			}
+			else if(!patching)
+				toolStripStatusLabel1.Text = "Server is already on favorite list!";
 		}
 
 		private void editPort_KeyPress(object sender, KeyPressEventArgs e)
@@ -248,8 +259,8 @@ namespace otloader
 							storedServers.RemoveAt(listBoxServers.SelectedIndex);
 							UpdateServerList();
 
-							editServer.Text = "";
-							editPort.Text = "";
+							editServer.Text = editPort.Text = "";
+							toolStripStatusLabel1.Text = "Favorite removed.";
 							break;
 						}
 
@@ -289,6 +300,19 @@ namespace otloader
 				this.WindowState = FormWindowState.Normal; //window has to be in normal state to save a proper location
 				this.Close();
 			}
+		}
+
+		private void toolStripStatusLabel1_TextChanged(object sender, EventArgs e)
+		{
+			Wait(timer, 3000, (o, a) => toolStripStatusLabel1.Text = "");
+		}
+
+		static void Wait(Timer t, Int32 interval, EventHandler action)
+		{
+			t.Interval = interval;
+			t.Tick += new EventHandler((o, e) => t.Enabled = false);
+			t.Tick += action;
+			t.Enabled = true;
 		}
 	}
 }
