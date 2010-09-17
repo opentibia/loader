@@ -20,10 +20,6 @@ namespace otloader
 	{
 		private otloader.Settings settings = new otloader.Settings();
 
-		private System.Windows.Forms.Timer timer = new Timer();
-		private bool closing = true;
-		private Rectangle bounds;
-
 		private string prevPatchedServer;
 		private bool isClientPatched = false;
 
@@ -80,9 +76,8 @@ namespace otloader
 
 			checkBoxAutoAdd.Checked = settings.AutoAddServer;
 			storedServers = settings.GetServerList();
-			UpdateServerList();
 
-			bounds = this.Bounds;
+			UpdateServerList();
 			if (listBoxServers.Items.Count > 0)
 			{
 				listBoxServers.SelectedIndex = 0;
@@ -91,14 +86,7 @@ namespace otloader
 
 		private void FormOtloader_FormClosing(object sender, FormClosingEventArgs e)
 		{
-			if (!closing)
-			{
-				e.Cancel = true;
-				timer.Tick += new EventHandler(timer_Tick);
-				timer.Interval = 10;
-				timer.Enabled = true;
-			}
-			else if(e.CloseReason != CloseReason.ApplicationExitCall)
+			if(e.CloseReason != CloseReason.ApplicationExitCall)
 			{
 				settings.UpdateServerList(storedServers);
 				settings.AutoAddServer = checkBoxAutoAdd.Checked;
@@ -108,25 +96,6 @@ namespace otloader
 				Properties.Settings.Default.Save();
 			}
 		}
-
-		private void timer_Tick(object sender, EventArgs e)
-		{
-			Rectangle workingArea = Screen.GetWorkingArea(this.Bounds);
-			this.Bounds = new Rectangle(
-				Math.Max(workingArea.Width - this.Width, this.Left + 10),
-				Math.Max(workingArea.Height - this.Height, this.Top + 10),
-				Math.Max(0, this.Width - 10),
-				Math.Max(0, this.Height - 10));
-
-			if (this.Bounds.Bottom >= workingArea.Bottom)
-			{
-				timer.Tick -= new EventHandler(timer_Tick);
-				timer.Enabled = false;
-
-				closing = true;
-                this.Close();
-            }
-        }
 
 		private void UpdateServerList()
 		{
@@ -234,6 +203,7 @@ namespace otloader
 
 		private void editPort_KeyPress(object sender, KeyPressEventArgs e)
 		{
+			toolTip1.Hide(editPort);
 			if (!Char.IsControl(e.KeyChar))
 			{
 				if (Char.IsDigit(e.KeyChar))
@@ -244,7 +214,7 @@ namespace otloader
 					}
 					catch
 					{
-						//TODO: some tooltip in here
+						toolTip1.Show("Value must be a valid port number.", editPort, 2000);
 						e.Handled = true;
 					}
 				}
@@ -300,9 +270,7 @@ namespace otloader
 			{
 				this.ShowInTaskbar = false;
 				this.notifyIcon.Visible = true;
-
-				closing = false;
-				this.Close();
+				this.Opacity = 0.0;
 			}
 		}
 
@@ -313,26 +281,12 @@ namespace otloader
 				this.ShowInTaskbar = true;
 				this.notifyIcon.Visible = false;
 
-				//remove the timer event
-				timer.Tick -= new EventHandler(timer_Tick);
-				timer.Enabled = false;
-
-				this.Bounds = bounds; //bring original bounds
-				closing = true;
-
 				this.WindowState = FormWindowState.Normal;
-				this.Activate();
+				this.Opacity = 1.0;
 			}
 			else if (e.Button == MouseButtons.Right)
 			{
-				//remove the timer event
-				timer.Tick -= new EventHandler(timer_Tick);
-				timer.Enabled = false;
-
-				this.Bounds = bounds; //bring original bounds
-				closing = true;
-
-				this.WindowState = FormWindowState.Normal; //need the window back to save a proper location
+				this.WindowState = FormWindowState.Normal; //window has to be in normal state to save a proper location
 				this.Close();
 			}
 		}

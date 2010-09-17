@@ -40,6 +40,7 @@
 			this.btnFavorite = new System.Windows.Forms.Button();
 			this.label3 = new System.Windows.Forms.Label();
 			this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
+			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
 			this.SuspendLayout();
 			// 
 			// btnLoad
@@ -169,7 +170,8 @@
         private System.Windows.Forms.ListBox listBoxServers;
         private System.Windows.Forms.Button btnFavorite;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.NotifyIcon notifyIcon;
+		private System.Windows.Forms.NotifyIcon notifyIcon;
+		private System.Windows.Forms.ToolTip toolTip1;
     }
 }
 
