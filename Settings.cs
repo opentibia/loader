@@ -161,7 +161,6 @@ namespace otloader
 						}
 						catch
 						{
-							server.port = 7171;
 						}
                     }
 
