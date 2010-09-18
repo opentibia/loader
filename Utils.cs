@@ -114,7 +114,7 @@ namespace otloader
 			[In, Out] ref UInt32 lpNumberOfBytesWritten
 		);
 
-		[DllImport(libpath, EntryPoint="PidOf")]
+		[DllImport(libpath, SetLastError = true)]
 		private static extern Int32 PidOf(
 			string lpWindowName
 		);
@@ -280,7 +280,7 @@ namespace otloader
 			GetWindowThreadProcessId(windowHandle, out processId);
 			return processId;
 #else
-			return PidOf(tibiaWindowName);
+			return (UInt32)PidOf(tibiaWindowName);
 #endif
 		}
 
