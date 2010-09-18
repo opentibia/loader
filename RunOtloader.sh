@@ -10,5 +10,5 @@ elif [ "$UNAME" == "Linux" ]; then
 fi
 
 cd "$OTLOADERROOT"
-./otloader
+mono ./otloader.exe
 

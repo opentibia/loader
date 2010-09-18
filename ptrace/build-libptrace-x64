@@ -1,0 +1,3 @@
+g++ -m64 -MMD main.cpp -fPIC -O3 -c -o "main64.o"
+g++ -m64 -shared -o "libptrace_64.so" "main64.o"
+rm main64.*
