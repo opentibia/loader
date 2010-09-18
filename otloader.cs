@@ -193,12 +193,14 @@ namespace otloader
 
 		private void FormOtloader_SizeChanged(object sender, EventArgs e)
 		{
+			/*
 			if (this.WindowState == FormWindowState.Minimized)
 			{
 				this.ShowInTaskbar = false;
 				this.notifyIcon.Visible = true;
 				this.Opacity = 0.0;
 			}
+			*/
 		}
 
 		private void notifyIcon_MouseClick(object sender, MouseEventArgs e)
