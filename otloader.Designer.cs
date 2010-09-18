@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
 			this.components = new System.ComponentModel.Container();
-			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormOtloader));
 			this.btnLoad = new System.Windows.Forms.Button();
 			this.editServer = new System.Windows.Forms.TextBox();
 			this.label1 = new System.Windows.Forms.Label();
@@ -132,7 +131,6 @@
 			// 
 			// notifyIcon
 			// 
-			this.notifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon.Icon")));
 			this.notifyIcon.Text = "otloader";
 			this.notifyIcon.MouseClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon_MouseClick);
 			// 
@@ -168,7 +166,6 @@
 			this.Controls.Add(this.editServer);
 			this.Controls.Add(this.btnLoad);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.MaximizeBox = false;
 			this.Name = "FormOtloader";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
