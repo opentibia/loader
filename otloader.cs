@@ -172,7 +172,6 @@ namespace otloader
 				{
 					case Keys.Delete:
 						{
-							Server server = storedServers[listBoxServers.SelectedIndex];
 							storedServers.RemoveAt(listBoxServers.SelectedIndex);
 							UpdateServerList();
 
