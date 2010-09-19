@@ -1,4 +1,5 @@
 <settings>
+  <multiclientpatch>1</multiclientpatch>
   <autoaddserver>1</autoaddserver>
   <servers>
     <server port="7171">127.0.0.1</server>
