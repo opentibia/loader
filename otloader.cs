@@ -68,10 +68,12 @@ namespace otloader
 			clientRSAKeys = settings.GetRSAKeys();
 			otservKey = settings.OtservRSAKey;
 
+			checkBoxAutoAdd.Checked = settings.AutoAddServer;
+			checkBoxMultiClientPatch.Checked = settings.MultiClientPatch;
+
 			storedServers = settings.GetServerList();
 			UpdateServerList();
 
-			checkBoxAutoAdd.Checked = settings.AutoAddServer;
 			if (listBoxServers.Items.Count > 0)
 			{
 				listBoxServers.SelectedIndex = 0;
@@ -84,6 +86,7 @@ namespace otloader
 			{
 				settings.UpdateServerList(storedServers);
 				settings.AutoAddServer = checkBoxAutoAdd.Checked;
+				settings.MultiClientPatch = checkBoxMultiClientPatch.Checked;
 				settings.Save();
 
 				Properties.Settings.Default.Location = base.DesktopBounds.Location;
@@ -97,6 +100,7 @@ namespace otloader
 			switch (result)
 			{
 				case PatchResult.CouldNotFindClient: toolStripStatusLabel1.Text = "Could not find client!"; break;
+				case PatchResult.CouldNotFindRSA: toolStripStatusLabel1.Text = "Could not find RSA key!"; break;
 				case PatchResult.CouldNotPatchRSA: toolStripStatusLabel1.Text = "Could not patch RSA key!"; break;
 				case PatchResult.CouldNotPatchServerList: toolStripStatusLabel1.Text = "Could not patch server list!"; break;
 				case PatchResult.CouldNotPatchServer: toolStripStatusLabel1.Text = "Could not patch new server!"; break;
@@ -104,7 +108,7 @@ namespace otloader
 				case PatchResult.AlreadyPatchedNotOwned:
 					{
 						toolStripStatusLabel1.Text = "Client already patched by another instance!";
-						toolTip1.Show("To use loader you must restart the client.", btnLoad, 5000);
+						toolTip.Show("To use otloader you must restart the client.", btnLoad, 5000);
 						break;
 					}
 				case PatchResult.Success:
@@ -131,7 +135,7 @@ namespace otloader
 
 		private void editPort_KeyPress(object sender, KeyPressEventArgs e)
 		{
-			toolTip1.Hide(editPort);
+			toolTip.Hide(editPort);
 			if (!Char.IsControl(e.KeyChar))
 			{
 				if (Char.IsDigit(e.KeyChar))
@@ -142,7 +146,7 @@ namespace otloader
 					}
 					catch
 					{
-						toolTip1.Show("Value must be a valid port number.", editPort, 2000);
+						toolTip.Show("Value must be a valid port number.", editPort, 2000);
 						e.Handled = true;
 					}
 				}
@@ -239,7 +243,7 @@ namespace otloader
 
 		private PatchResult PatchClient()
 		{
-			UInt32 client = Utils.GetProcessId();
+			UInt32 client = Utils.GetClientProcessId();
 			if (client == 0) 
 			{
 				return PatchResult.CouldNotFindClient;
@@ -284,9 +288,14 @@ namespace otloader
 				{
 					return PatchResult.CouldNotPatchServerList;
 				}
+
+				//MC patch
+				if (checkBoxMultiClientPatch.Checked)
+				{
+					Utils.PatchMultiClient();
+				}
 			}
-			else if(editServer.Text == prevPatchedServer.name &&
-				port == prevPatchedServer.port)
+			else if(editServer.Text == prevPatchedServer.name && port == prevPatchedServer.port)
 			{
 				return PatchResult.AlreadyPatched;
 			}

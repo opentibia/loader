@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace otloader
 {
@@ -12,6 +13,7 @@ namespace otloader
 		CouldNotFindServer,
 		CouldNotPatchServer,
 		CouldNotPatchServerList,
+		CouldNotPatchMultiClient,
 		CouldNotPatchPort,
 		AlreadyPatched,
 		AlreadyPatchedNotOwned,
@@ -24,8 +26,26 @@ namespace otloader
 
 		private const string tibiaWindowName = "Tibia";
 		private const string tibiaClassName = "TibiaClient";
+		private const UInt32 tibiaMutexHandle = 0xF8;
 		
 #if WIN32
+		[DllImport("kernel32.dll")]
+		private static extern IntPtr OpenMutex(
+			uint dwDesiredAccess,
+			bool bInheritHandle,
+			string lpName);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		static extern bool DuplicateHandle(
+			IntPtr hSourceProcessHandle,
+			IntPtr hSourceHandle,
+			IntPtr hTargetProcessHandle,
+			out IntPtr lpTargetHandle,
+			uint dwDesiredAccess,
+			[MarshalAs(UnmanagedType.Bool)] bool bInheritHandle,
+			uint dwOptions);
+
 		[DllImport("Kernel32.dll", SetLastError = true)]
 		private static extern Int32 ReadProcessMemory
 		(
@@ -229,10 +249,10 @@ namespace otloader
 			return false;
 		}
 
-		private static IntPtr GetProcessHandle()
+		private static IntPtr GetClientProcessHandle()
 		{
 #if WIN32
-			UInt32 processId = GetProcessId();
+			UInt32 processId = GetClientProcessId();
 			if (processId == 0)
 			{
 				return IntPtr.Zero;
@@ -241,6 +261,20 @@ namespace otloader
 			return OpenProcess(0x1F0FFF, 1, processId);
 #else
 			return (IntPtr)GetProcessId();
+#endif
+		}
+
+		private static IntPtr GetOwnProcessHandle()
+		{
+			UInt32 processId = (UInt32)Process.GetCurrentProcess().Id;
+			if (processId == 0)
+			{
+				return IntPtr.Zero;
+			}
+#if WIN32
+			return OpenProcess(0x1F0FFF, 1, processId);
+#else
+			return processId;
 #endif
 		}
 
@@ -267,7 +301,7 @@ namespace otloader
 			return result != 0;
 		}
 
-		public static UInt32 GetProcessId()
+		public static UInt32 GetClientProcessId()
 		{
 #if WIN32
 			IntPtr windowHandle = FindWindow(tibiaClassName, null);
@@ -284,9 +318,44 @@ namespace otloader
 #endif
 		}
 
+		public static PatchResult PatchMultiClient()
+		{
+#if WIN32
+			IntPtr clientHandle = GetClientProcessHandle();
+			if (clientHandle == IntPtr.Zero)
+			{
+				return PatchResult.CouldNotFindClient;
+			}
+
+			IntPtr processHandle = GetOwnProcessHandle();
+			if (processHandle == IntPtr.Zero)
+			{
+				return PatchResult.CouldNotPatchMultiClient;
+			}
+
+			PatchResult result = PatchResult.CouldNotPatchMultiClient;
+
+			IntPtr dupHandle;
+			const UInt32 DUPLICATE_CLOSE_SOURCE = (0x00000001);
+			if (DuplicateHandle(clientHandle, (IntPtr)tibiaMutexHandle, processHandle, out dupHandle, 0, false, DUPLICATE_CLOSE_SOURCE))
+			{
+				CloseHandle((IntPtr)dupHandle);
+				result = PatchResult.Success;
+			}
+
+			CloseHandle(clientHandle);
+			CloseHandle(processHandle);
+
+			return result;
+#else
+			//TODO
+			return PatchResult.CouldNotPatchMultiClient;
+#endif
+		}
+
 		public static PatchResult PatchClientRSAKey(string oldRSAKey, string newRSAKey)
 		{
-			IntPtr processHandle = GetProcessHandle();
+			IntPtr processHandle = GetClientProcessHandle();
 			if (processHandle == IntPtr.Zero)
 			{
 				return PatchResult.CouldNotFindClient;
@@ -326,7 +395,7 @@ namespace otloader
 
 		public static PatchResult PatchClientServer(string oldServer, string newServer, UInt16 port)
 		{
-			IntPtr processHandle = GetProcessHandle();
+			IntPtr processHandle = GetClientProcessHandle();
 			if (processHandle == IntPtr.Zero)
 			{
 				return PatchResult.CouldNotFindClient;

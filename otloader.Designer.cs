@@ -39,15 +39,16 @@
 			this.btnFavorite = new System.Windows.Forms.Button();
 			this.label3 = new System.Windows.Forms.Label();
 			this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
-			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-			this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+			this.statusStrip = new System.Windows.Forms.StatusStrip();
 			this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
-			this.statusStrip1.SuspendLayout();
+			this.checkBoxMultiClientPatch = new System.Windows.Forms.CheckBox();
+			this.statusStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// btnLoad
 			// 
-			this.btnLoad.Location = new System.Drawing.Point(128, 50);
+			this.btnLoad.Location = new System.Drawing.Point(131, 36);
 			this.btnLoad.Name = "btnLoad";
 			this.btnLoad.Size = new System.Drawing.Size(60, 20);
 			this.btnLoad.TabIndex = 2;
@@ -57,7 +58,7 @@
 			// 
 			// editServer
 			// 
-			this.editServer.Location = new System.Drawing.Point(56, 26);
+			this.editServer.Location = new System.Drawing.Point(59, 12);
 			this.editServer.MaxLength = 255;
 			this.editServer.Name = "editServer";
 			this.editServer.Size = new System.Drawing.Size(198, 20);
@@ -66,7 +67,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(9, 29);
+			this.label1.Location = new System.Drawing.Point(8, 19);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(41, 13);
 			this.label1.TabIndex = 0;
@@ -74,7 +75,7 @@
 			// 
 			// editPort
 			// 
-			this.editPort.Location = new System.Drawing.Point(56, 50);
+			this.editPort.Location = new System.Drawing.Point(59, 38);
 			this.editPort.MaxLength = 5;
 			this.editPort.Name = "editPort";
 			this.editPort.Size = new System.Drawing.Size(56, 20);
@@ -84,7 +85,7 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(21, 53);
+			this.label2.Location = new System.Drawing.Point(20, 43);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(29, 13);
 			this.label2.TabIndex = 0;
@@ -93,26 +94,26 @@
 			// checkBoxAutoAdd
 			// 
 			this.checkBoxAutoAdd.AutoSize = true;
-			this.checkBoxAutoAdd.Location = new System.Drawing.Point(122, 72);
+			this.checkBoxAutoAdd.Location = new System.Drawing.Point(150, 85);
 			this.checkBoxAutoAdd.Name = "checkBoxAutoAdd";
-			this.checkBoxAutoAdd.Size = new System.Drawing.Size(135, 17);
+			this.checkBoxAutoAdd.Size = new System.Drawing.Size(107, 17);
 			this.checkBoxAutoAdd.TabIndex = 3;
-			this.checkBoxAutoAdd.Text = "Auto-Favorite on Patch";
+			this.checkBoxAutoAdd.Text = "Auto add favorite";
 			this.checkBoxAutoAdd.UseVisualStyleBackColor = true;
 			// 
 			// listBoxServers
 			// 
 			this.listBoxServers.FormattingEnabled = true;
-			this.listBoxServers.Location = new System.Drawing.Point(12, 92);
+			this.listBoxServers.Location = new System.Drawing.Point(11, 113);
 			this.listBoxServers.Name = "listBoxServers";
-			this.listBoxServers.Size = new System.Drawing.Size(245, 95);
+			this.listBoxServers.Size = new System.Drawing.Size(246, 108);
 			this.listBoxServers.TabIndex = 4;
 			this.listBoxServers.SelectedValueChanged += new System.EventHandler(this.listBoxServers_SelectedValueChanged);
 			this.listBoxServers.KeyUp += new System.Windows.Forms.KeyEventHandler(this.listBoxServers_KeyUp);
 			// 
 			// btnFavorite
 			// 
-			this.btnFavorite.Location = new System.Drawing.Point(194, 50);
+			this.btnFavorite.Location = new System.Drawing.Point(197, 36);
 			this.btnFavorite.Name = "btnFavorite";
 			this.btnFavorite.Size = new System.Drawing.Size(60, 20);
 			this.btnFavorite.TabIndex = 5;
@@ -123,7 +124,7 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(12, 76);
+			this.label3.Location = new System.Drawing.Point(8, 89);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(53, 13);
 			this.label3.TabIndex = 6;
@@ -134,15 +135,15 @@
 			this.notifyIcon.Text = "otloader";
 			this.notifyIcon.MouseClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon_MouseClick);
 			// 
-			// statusStrip1
+			// statusStrip
 			// 
-			this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+			this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
 			this.toolStripStatusLabel1});
-			this.statusStrip1.Location = new System.Drawing.Point(0, 193);
-			this.statusStrip1.Name = "statusStrip1";
-			this.statusStrip1.Size = new System.Drawing.Size(269, 22);
-			this.statusStrip1.SizingGrip = false;
-			this.statusStrip1.TabIndex = 7;
+			this.statusStrip.Location = new System.Drawing.Point(0, 224);
+			this.statusStrip.Name = "statusStrip";
+			this.statusStrip.Size = new System.Drawing.Size(269, 22);
+			this.statusStrip.SizingGrip = false;
+			this.statusStrip.TabIndex = 7;
 			// 
 			// toolStripStatusLabel1
 			// 
@@ -150,12 +151,23 @@
 			this.toolStripStatusLabel1.Size = new System.Drawing.Size(0, 17);
 			this.toolStripStatusLabel1.TextChanged += new System.EventHandler(this.toolStripStatusLabel1_TextChanged);
 			// 
+			// checkBoxMultiClientPatch
+			// 
+			this.checkBoxMultiClientPatch.AutoSize = true;
+			this.checkBoxMultiClientPatch.Location = new System.Drawing.Point(150, 62);
+			this.checkBoxMultiClientPatch.Name = "checkBoxMultiClientPatch";
+			this.checkBoxMultiClientPatch.Size = new System.Drawing.Size(106, 17);
+			this.checkBoxMultiClientPatch.TabIndex = 8;
+			this.checkBoxMultiClientPatch.Text = "Multi client patch";
+			this.checkBoxMultiClientPatch.UseVisualStyleBackColor = true;
+			// 
 			// FormOtloader
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(269, 215);
-			this.Controls.Add(this.statusStrip1);
+			this.ClientSize = new System.Drawing.Size(269, 246);
+			this.Controls.Add(this.checkBoxMultiClientPatch);
+			this.Controls.Add(this.statusStrip);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.btnFavorite);
 			this.Controls.Add(this.listBoxServers);
@@ -173,8 +185,8 @@
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormOtloader_FormClosing);
 			this.Load += new System.EventHandler(this.FormOtloader_Load);
 			this.SizeChanged += new System.EventHandler(this.FormOtloader_SizeChanged);
-			this.statusStrip1.ResumeLayout(false);
-			this.statusStrip1.PerformLayout();
+			this.statusStrip.ResumeLayout(false);
+			this.statusStrip.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -192,9 +204,10 @@
 		private System.Windows.Forms.Button btnFavorite;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.NotifyIcon notifyIcon;
-		private System.Windows.Forms.ToolTip toolTip1;
-		private System.Windows.Forms.StatusStrip statusStrip1;
+		private System.Windows.Forms.ToolTip toolTip;
+		private System.Windows.Forms.StatusStrip statusStrip;
 		private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
+		private System.Windows.Forms.CheckBox checkBoxMultiClientPatch;
 	}
 }
 
