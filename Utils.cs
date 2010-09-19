@@ -25,6 +25,8 @@ namespace otloader
 
 		private const string tibiaWindowName = "Tibia";
 		private const string tibiaClassName = "TibiaClient";
+		private const string tibiaRSAClientText = "Symmetric encryption for login server failed";
+
 #if WIN32
 		private const UInt32 tibiaMutexHandle = 0xF8;
 
@@ -196,11 +198,7 @@ namespace otloader
 			return false;
 		}
 		
-		private static bool SearchBytes(
-			IntPtr processHandle,
-			byte[] bytePattern,
-			ref UInt32 hintAddress,
-			out IntPtr outAddress)
+		private static bool SearchBytes(IntPtr processHandle, byte[] bytePattern, ref UInt32 hintAddress, out IntPtr outAddress)
 		{
 			byte[] buffer = new byte[0x2000 * 32];
 			UInt32 bytesRead = 0;
@@ -446,6 +444,19 @@ namespace otloader
 			CloseHandle(processHandle);
 			#endif
 			return PatchResult.Success;
+		}
+
+		public static bool isClientUsingRSA()
+		{
+			IntPtr processHandle = GetClientProcessHandle();
+			if (processHandle == IntPtr.Zero)
+			{
+				return false;
+			}
+
+			UInt32 dummyAddress = 0;
+			IntPtr address;
+			return SearchBytes(processHandle, ToByteArray(tibiaRSAClientText), ref dummyAddress, out address);
 		}
 	}
 }

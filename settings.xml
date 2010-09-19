@@ -1,7 +1,6 @@
 <settings>
-  <multiclientpatch>0</multiclientpatch>
-  <autoaddserver>0</autoaddserver>
-  <rsapatch>1</rsapatch>
+  <multiclientpatch>1</multiclientpatch>
+  <autoaddserver>1</autoaddserver>
   <servers>
     <server port="7171">127.0.0.1</server>
   </servers>

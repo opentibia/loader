@@ -43,7 +43,6 @@
 			this.statusStrip = new System.Windows.Forms.StatusStrip();
 			this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
 			this.checkBoxMultiClientPatch = new System.Windows.Forms.CheckBox();
-			this.checkBoxRSAPatch = new System.Windows.Forms.CheckBox();
 			this.statusStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -155,29 +154,18 @@
 			// checkBoxMultiClientPatch
 			// 
 			this.checkBoxMultiClientPatch.AutoSize = true;
-			this.checkBoxMultiClientPatch.Location = new System.Drawing.Point(139, 82);
+			this.checkBoxMultiClientPatch.Location = new System.Drawing.Point(131, 64);
 			this.checkBoxMultiClientPatch.Name = "checkBoxMultiClientPatch";
 			this.checkBoxMultiClientPatch.Size = new System.Drawing.Size(106, 17);
 			this.checkBoxMultiClientPatch.TabIndex = 8;
 			this.checkBoxMultiClientPatch.Text = "Patch multi client";
 			this.checkBoxMultiClientPatch.UseVisualStyleBackColor = true;
 			// 
-			// checkBoxRSAPatch
-			// 
-			this.checkBoxRSAPatch.AutoSize = true;
-			this.checkBoxRSAPatch.Location = new System.Drawing.Point(139, 64);
-			this.checkBoxRSAPatch.Name = "checkBoxRSAPatch";
-			this.checkBoxRSAPatch.Size = new System.Drawing.Size(118, 17);
-			this.checkBoxRSAPatch.TabIndex = 9;
-			this.checkBoxRSAPatch.Text = "Patch RSA (< v7.7)";
-			this.checkBoxRSAPatch.UseVisualStyleBackColor = true;
-			// 
 			// FormOtloader
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(269, 239);
-			this.Controls.Add(this.checkBoxRSAPatch);
 			this.Controls.Add(this.checkBoxMultiClientPatch);
 			this.Controls.Add(this.statusStrip);
 			this.Controls.Add(this.label3);
@@ -220,7 +208,6 @@
 		private System.Windows.Forms.StatusStrip statusStrip;
 		private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
 		private System.Windows.Forms.CheckBox checkBoxMultiClientPatch;
-		private System.Windows.Forms.CheckBox checkBoxRSAPatch;
 	}
 }
 

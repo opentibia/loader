@@ -70,18 +70,16 @@ namespace otloader
 
 			checkBoxAutoAdd.Checked = settings.AutoAddServer;
 			checkBoxMultiClientPatch.Checked = settings.MultiClientPatch;
-			checkBoxRSAPatch.Checked = settings.RSAPatch;
 
 			storedServers = settings.GetServerList();
 			UpdateServerList();
-
-			toolTip.SetToolTip(checkBoxRSAPatch, "As of Tibia 7.7 client require RSA key to be patched in order to play on Otserv.\nIf you are running an older Tibia version, uncheck this option.");
-			toolTip.SetToolTip(checkBoxMultiClientPatch, "Allows to run multiple clients at one time.");
 
 			if (listBoxServers.Items.Count > 0)
 			{
 				listBoxServers.SelectedIndex = 0;
 			}
+
+			toolTip.SetToolTip(checkBoxMultiClientPatch, "Allows to run multiple clients at one time.");
 		}
 
 		private void FormOtloader_FormClosing(object sender, FormClosingEventArgs e)
@@ -91,7 +89,6 @@ namespace otloader
 				settings.UpdateServerList(storedServers);
 				settings.AutoAddServer = checkBoxAutoAdd.Checked;
 				settings.MultiClientPatch = checkBoxMultiClientPatch.Checked;
-				settings.RSAPatch = checkBoxRSAPatch.Checked;
 				settings.Save();
 
 				Properties.Settings.Default.Location = base.DesktopBounds.Location;
@@ -267,7 +264,7 @@ namespace otloader
 						toolTip.Show("Unable to patch multi client.", checkBoxMultiClientPatch, 5000);
 				}
 
-				if (checkBoxRSAPatch.Checked)
+				if(Utils.isClientUsingRSA())
 				{
 					PatchResult result = PatchResult.Dummy;
 					foreach (string RSAKey in clientRSAKeys)
