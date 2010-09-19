@@ -163,7 +163,6 @@ extern "C" bool ClearAtomOwner(const char* atomName)
 {
 	Display* display = XOpenDisplay(NULL);
 	Atom atom = XInternAtom(display, atomName, true);
-	std::cout << "atom: " << (int)atom << std::endl;
 	if((int)atom == 0)
 	{
 		return false;
