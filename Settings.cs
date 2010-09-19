@@ -133,6 +133,32 @@ namespace otloader
 			}
 		}
 
+		public bool RSAPatch
+		{
+			get
+			{
+				XmlNode node = xmlDocument.SelectSingleNode("/settings/rsapatch");
+				if (node != null)
+				{
+					try
+					{
+						return Int32.Parse(node.InnerText) == 1;
+					}
+					catch
+					{
+					}
+				}
+
+				return true;
+			}
+
+			set
+			{
+				XmlNode node = (XmlNode)makeXPath(xmlDocument, "/settings/rsapatch");
+				node.InnerText = (value ? "1" : "0");
+			}
+		}
+
 		public List<string> GetClientServerList()
 		{
 			List<string> list = new List<string>();

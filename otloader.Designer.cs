@@ -43,12 +43,13 @@
 			this.statusStrip = new System.Windows.Forms.StatusStrip();
 			this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
 			this.checkBoxMultiClientPatch = new System.Windows.Forms.CheckBox();
+			this.checkBoxRSAPatch = new System.Windows.Forms.CheckBox();
 			this.statusStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// btnLoad
 			// 
-			this.btnLoad.Location = new System.Drawing.Point(131, 36);
+			this.btnLoad.Location = new System.Drawing.Point(131, 38);
 			this.btnLoad.Name = "btnLoad";
 			this.btnLoad.Size = new System.Drawing.Size(60, 20);
 			this.btnLoad.TabIndex = 2;
@@ -67,7 +68,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(8, 19);
+			this.label1.Location = new System.Drawing.Point(8, 15);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(41, 13);
 			this.label1.TabIndex = 0;
@@ -85,7 +86,7 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(20, 43);
+			this.label2.Location = new System.Drawing.Point(20, 40);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(29, 13);
 			this.label2.TabIndex = 0;
@@ -94,7 +95,7 @@
 			// checkBoxAutoAdd
 			// 
 			this.checkBoxAutoAdd.AutoSize = true;
-			this.checkBoxAutoAdd.Location = new System.Drawing.Point(150, 85);
+			this.checkBoxAutoAdd.Location = new System.Drawing.Point(12, 64);
 			this.checkBoxAutoAdd.Name = "checkBoxAutoAdd";
 			this.checkBoxAutoAdd.Size = new System.Drawing.Size(107, 17);
 			this.checkBoxAutoAdd.TabIndex = 3;
@@ -104,7 +105,7 @@
 			// listBoxServers
 			// 
 			this.listBoxServers.FormattingEnabled = true;
-			this.listBoxServers.Location = new System.Drawing.Point(11, 113);
+			this.listBoxServers.Location = new System.Drawing.Point(11, 105);
 			this.listBoxServers.Name = "listBoxServers";
 			this.listBoxServers.Size = new System.Drawing.Size(246, 108);
 			this.listBoxServers.TabIndex = 4;
@@ -113,7 +114,7 @@
 			// 
 			// btnFavorite
 			// 
-			this.btnFavorite.Location = new System.Drawing.Point(197, 36);
+			this.btnFavorite.Location = new System.Drawing.Point(197, 38);
 			this.btnFavorite.Name = "btnFavorite";
 			this.btnFavorite.Size = new System.Drawing.Size(60, 20);
 			this.btnFavorite.TabIndex = 5;
@@ -138,8 +139,8 @@
 			// statusStrip
 			// 
 			this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-			this.toolStripStatusLabel1});
-			this.statusStrip.Location = new System.Drawing.Point(0, 224);
+            this.toolStripStatusLabel1});
+			this.statusStrip.Location = new System.Drawing.Point(0, 217);
 			this.statusStrip.Name = "statusStrip";
 			this.statusStrip.Size = new System.Drawing.Size(269, 22);
 			this.statusStrip.SizingGrip = false;
@@ -154,18 +155,29 @@
 			// checkBoxMultiClientPatch
 			// 
 			this.checkBoxMultiClientPatch.AutoSize = true;
-			this.checkBoxMultiClientPatch.Location = new System.Drawing.Point(150, 62);
+			this.checkBoxMultiClientPatch.Location = new System.Drawing.Point(139, 82);
 			this.checkBoxMultiClientPatch.Name = "checkBoxMultiClientPatch";
 			this.checkBoxMultiClientPatch.Size = new System.Drawing.Size(106, 17);
 			this.checkBoxMultiClientPatch.TabIndex = 8;
-			this.checkBoxMultiClientPatch.Text = "Multi client patch";
+			this.checkBoxMultiClientPatch.Text = "Patch multi client";
 			this.checkBoxMultiClientPatch.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxRSAPatch
+			// 
+			this.checkBoxRSAPatch.AutoSize = true;
+			this.checkBoxRSAPatch.Location = new System.Drawing.Point(139, 64);
+			this.checkBoxRSAPatch.Name = "checkBoxRSAPatch";
+			this.checkBoxRSAPatch.Size = new System.Drawing.Size(118, 17);
+			this.checkBoxRSAPatch.TabIndex = 9;
+			this.checkBoxRSAPatch.Text = "Patch RSA (< v7.7)";
+			this.checkBoxRSAPatch.UseVisualStyleBackColor = true;
 			// 
 			// FormOtloader
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(269, 246);
+			this.ClientSize = new System.Drawing.Size(269, 239);
+			this.Controls.Add(this.checkBoxRSAPatch);
 			this.Controls.Add(this.checkBoxMultiClientPatch);
 			this.Controls.Add(this.statusStrip);
 			this.Controls.Add(this.label3);
@@ -208,6 +220,7 @@
 		private System.Windows.Forms.StatusStrip statusStrip;
 		private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
 		private System.Windows.Forms.CheckBox checkBoxMultiClientPatch;
+		private System.Windows.Forms.CheckBox checkBoxRSAPatch;
 	}
 }
 

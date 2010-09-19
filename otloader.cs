@@ -70,9 +70,13 @@ namespace otloader
 
 			checkBoxAutoAdd.Checked = settings.AutoAddServer;
 			checkBoxMultiClientPatch.Checked = settings.MultiClientPatch;
+			checkBoxRSAPatch.Checked = settings.RSAPatch;
 
 			storedServers = settings.GetServerList();
 			UpdateServerList();
+
+			toolTip.SetToolTip(checkBoxRSAPatch, "As of Tibia 7.7 client require RSA key to be patched in order to play on Otserv.\nIf you are running an older Tibia version, uncheck this option.");
+			toolTip.SetToolTip(checkBoxMultiClientPatch, "Allows to run multiple clients at one time.");
 
 			if (listBoxServers.Items.Count > 0)
 			{
@@ -87,6 +91,7 @@ namespace otloader
 				settings.UpdateServerList(storedServers);
 				settings.AutoAddServer = checkBoxAutoAdd.Checked;
 				settings.MultiClientPatch = checkBoxMultiClientPatch.Checked;
+				settings.RSAPatch = checkBoxRSAPatch.Checked;
 				settings.Save();
 
 				Properties.Settings.Default.Location = base.DesktopBounds.Location;
@@ -100,7 +105,6 @@ namespace otloader
 			switch (result)
 			{
 				case PatchResult.CouldNotFindClient: toolStripStatusLabel1.Text = "Could not find client!"; break;
-				case PatchResult.CouldNotFindRSA: toolStripStatusLabel1.Text = "Could not find RSA key!"; break;
 				case PatchResult.CouldNotPatchRSA: toolStripStatusLabel1.Text = "Could not patch RSA key!"; break;
 				case PatchResult.CouldNotPatchServerList: toolStripStatusLabel1.Text = "Could not patch server list!"; break;
 				case PatchResult.CouldNotPatchServer: toolStripStatusLabel1.Text = "Could not patch new server!"; break;
@@ -257,28 +261,31 @@ namespace otloader
 			UInt16 port = UInt16.Parse(editPort.Text);
 			if (!isClientPatched)
 			{
-				//MC patch
 				if (checkBoxMultiClientPatch.Checked)
 				{
-					Utils.PatchMultiClient();
+					if (!Utils.PatchMultiClient())
+						toolTip.Show("Unable to patch multi client.", checkBoxMultiClientPatch, 5000);
 				}
 
-				PatchResult patchResult = PatchResult.Dummy;
-				foreach (string RSAKey in clientRSAKeys)
+				if (checkBoxRSAPatch.Checked)
 				{
-					if ((patchResult = Utils.PatchClientRSAKey(RSAKey, otservKey)) == PatchResult.Success)
+					PatchResult result = PatchResult.Dummy;
+					foreach (string RSAKey in clientRSAKeys)
 					{
-						break;
+						if ((result = Utils.PatchClientRSAKey(RSAKey, otservKey)) == PatchResult.Success)
+						{
+							break;
+						}
 					}
-				}
 
-				if (patchResult == PatchResult.AlreadyPatched)
-				{
-					return PatchResult.AlreadyPatchedNotOwned;
-				}
-				else if (patchResult != PatchResult.Success)
-				{
-					return PatchResult.CouldNotPatchRSA;
+					if (result == PatchResult.AlreadyPatched)
+					{
+						return PatchResult.AlreadyPatchedNotOwned;
+					}
+					else if (result != PatchResult.Success)
+					{
+						return PatchResult.CouldNotPatchRSA;
+					}
 				}
 
 				bool patched = false;
@@ -326,10 +333,9 @@ namespace otloader
 
 			if (!isStored)
 			{
-				Server server = new Server(editServer.Text, UInt16.Parse(editPort.Text));
-				storedServers.Add(server);
-
+				storedServers.Add(new Server(editServer.Text, UInt16.Parse(editPort.Text)));
 				UpdateServerList();
+
 				if(!patching)
 				{
 					toolStripStatusLabel1.Text = "Favorite added.";

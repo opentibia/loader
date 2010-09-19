@@ -13,7 +13,6 @@ namespace otloader
 		CouldNotFindServer,
 		CouldNotPatchServer,
 		CouldNotPatchServerList,
-		CouldNotPatchMultiClient,
 		CouldNotPatchPort,
 		AlreadyPatched,
 		AlreadyPatchedNotOwned,
@@ -26,13 +25,12 @@ namespace otloader
 
 		private const string tibiaWindowName = "Tibia";
 		private const string tibiaClassName = "TibiaClient";
-
 #if WIN32
 		private const UInt32 tibiaMutexHandle = 0xF8;
 
 		[DllImport("kernel32.dll")]
 		private static extern IntPtr OpenMutex(
-			uint dwDesiredAccess,
+			UInt32 dwDesiredAccess,
 			bool bInheritHandle,
 			string lpName);
 
@@ -43,11 +41,11 @@ namespace otloader
 			IntPtr hSourceHandle,
 			IntPtr hTargetProcessHandle,
 			out IntPtr lpTargetHandle,
-			uint dwDesiredAccess,
+			UInt32 dwDesiredAccess,
 			[MarshalAs(UnmanagedType.Bool)] bool bInheritHandle,
-			uint dwOptions);
+			UInt32 dwOptions);
 
-		[DllImport("Kernel32.dll", SetLastError = true)]
+		[DllImport("kernel32.dll", SetLastError = true)]
 		private static extern Int32 ReadProcessMemory
 		(
 			[In] IntPtr hProcess,
@@ -66,7 +64,7 @@ namespace otloader
 			[In, Out] ref UInt32 lpNumberOfBytesWritten
 		);
 
-		[DllImport("USER32.DLL", SetLastError = true)]
+		[DllImport("user32.DLL", SetLastError = true)]
 		private static extern IntPtr FindWindow(
 			string lpClassName,
 			string lpWindowName);
@@ -114,9 +112,9 @@ namespace otloader
 			return true;
 		}
 #else
-		const string libpath = "./libptrace.so";
-
 		private const string clientAtomName = "TIBIARUNNING";
+
+		private const string libpath = "./libptrace.so";
 
 		[DllImport(libpath, SetLastError = true)]
 		private static extern Int32 ReadProcessMemory
@@ -293,7 +291,7 @@ namespace otloader
 		private static IntPtr GetOwnProcessHandle()
 		{
 			UInt32 processId = (UInt32)Process.GetCurrentProcess().Id;
-			if (processId == 0)
+			if(processId == 0)
 			{
 				return IntPtr.Zero;
 			}
@@ -313,6 +311,7 @@ namespace otloader
 				const uint PAGE_EXECUTE_READWRITE = 0x40;
 				VirtualProtectEx(processHandle, address, (UIntPtr)patchBytes.Length, PAGE_EXECUTE_READWRITE, out lpfOldProtect);
 			}
+
 #endif
 			UInt32 bytesWritten = 0;
 			Int32 result = WriteProcessMemory(processHandle, address, patchBytes, (UInt32)patchBytes.Length, ref bytesWritten);
@@ -322,34 +321,34 @@ namespace otloader
 				UInt32 lpfDummy;
 				VirtualProtectEx(processHandle, address, (UIntPtr)patchBytes.Length, lpfOldProtect, out lpfDummy);
 			}
-#endif
 
-			return result != 0;
+#endif
+			return (result != 0);
 		}
 
-		public static PatchResult PatchMultiClient()
+		public static bool PatchMultiClient()
 		{
 #if WIN32
 			IntPtr clientHandle = GetClientProcessHandle();
 			if (clientHandle == IntPtr.Zero)
 			{
-				return PatchResult.CouldNotFindClient;
+				return false;
 			}
 
 			IntPtr processHandle = GetOwnProcessHandle();
 			if (processHandle == IntPtr.Zero)
 			{
-				return PatchResult.CouldNotPatchMultiClient;
+				return false;
 			}
-
-			PatchResult result = PatchResult.CouldNotPatchMultiClient;
 
 			IntPtr dupHandle;
 			const UInt32 DUPLICATE_CLOSE_SOURCE = (0x00000001);
+
+			bool result = false;
 			if (DuplicateHandle(clientHandle, (IntPtr)tibiaMutexHandle, processHandle, out dupHandle, 0, false, DUPLICATE_CLOSE_SOURCE))
 			{
 				CloseHandle((IntPtr)dupHandle);
-				result = PatchResult.Success;
+				result = true;
 			}
 
 			CloseHandle(clientHandle);
@@ -357,11 +356,7 @@ namespace otloader
 
 			return result;
 #else
-			if(!ClearAtomOwner(clientAtomName)){
-				return PatchResult.CouldNotPatchMultiClient;
-			}
-
-			return PatchResult.Success;
+			return ClearAtomOwner(clientAtomName);
 #endif
 		}
 
@@ -442,7 +437,7 @@ namespace otloader
 				return PatchResult.CouldNotPatchPort;
 			}
 			
-			if(hintAddress == 0)
+			if (hintAddress == 0)
 			{
 				hintAddress = ((UInt32)address) - 1000;
 			}
