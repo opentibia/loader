@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <iostream>
 #include <elf.h>
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
 
 extern "C" int ReadProcessMemory(
 	int pid,
@@ -155,4 +157,20 @@ extern "C" bool GetMemoryRange(int pid, unsigned int index, unsigned int* nStart
 	*nEndAddress = phdr.p_vaddr + phdr.p_memsz;
 										
 	return ((*nEndAddress) - (*nStartAddress)) > 0;
+}
+
+extern "C" bool ClearAtomOwner(const char* atomName)
+{
+	Display* display = XOpenDisplay(NULL);
+	Atom atom = XInternAtom(display, atomName, true);
+	std::cout << "atom: " << (int)atom << std::endl;
+	if((int)atom == 0)
+	{
+		return false;
+	}
+	
+	XSetSelectionOwner(display, atom, None, CurrentTime);
+	XGetSelectionOwner(display, atom);
+	
+	return true;
 }

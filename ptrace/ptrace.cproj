@@ -35,12 +35,15 @@
     <OutputName>ptrace</OutputName>
     <OptimizationLevel>3</OptimizationLevel>
     <DefineSymbols>MONODEVELOP</DefineSymbols>
+    <ExtraLinkerArguments>-lX11</ExtraLinkerArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Linux - Debug|x86|AnyCPU' ">
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\bin\Debug</OutputPath>
     <DefineSymbols>DEBUG MONODEVELOP</DefineSymbols>
     <CompileTarget>SharedLibrary</CompileTarget>
     <OutputName>ptrace</OutputName>
+    <ExtraLinkerArguments>-lX11</ExtraLinkerArguments>
+    <SourceDirectory>.</SourceDirectory>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="main.cpp" />

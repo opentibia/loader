@@ -257,6 +257,12 @@ namespace otloader
 			UInt16 port = UInt16.Parse(editPort.Text);
 			if (!isClientPatched)
 			{
+				//MC patch
+				if (checkBoxMultiClientPatch.Checked)
+				{
+					Utils.PatchMultiClient();
+				}
+
 				PatchResult patchResult = PatchResult.Dummy;
 				foreach (string RSAKey in clientRSAKeys)
 				{
@@ -287,12 +293,6 @@ namespace otloader
 				if (!patched)
 				{
 					return PatchResult.CouldNotPatchServerList;
-				}
-
-				//MC patch
-				if (checkBoxMultiClientPatch.Checked)
-				{
-					Utils.PatchMultiClient();
 				}
 			}
 			else if(editServer.Text == prevPatchedServer.name && port == prevPatchedServer.port)

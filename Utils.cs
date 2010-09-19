@@ -26,9 +26,10 @@ namespace otloader
 
 		private const string tibiaWindowName = "Tibia";
 		private const string tibiaClassName = "TibiaClient";
-		private const UInt32 tibiaMutexHandle = 0xF8;
-		
+
 #if WIN32
+		private const UInt32 tibiaMutexHandle = 0xF8;
+
 		[DllImport("kernel32.dll")]
 		private static extern IntPtr OpenMutex(
 			uint dwDesiredAccess,
@@ -115,6 +116,8 @@ namespace otloader
 #else
 		const string libpath = "./libptrace.so";
 
+		private const string clientAtomName = "TIBIARUNNING";
+
 		[DllImport(libpath, SetLastError = true)]
 		private static extern Int32 ReadProcessMemory
 		(
@@ -146,6 +149,12 @@ namespace otloader
 			[In, Out] ref UInt32 nStartAddress,
 			[In, Out] ref UInt32 nEndAddress
 		);
+
+		[DllImport(libpath, SetLastError = true)]
+		private static extern bool ClearAtomOwner(
+			string lpAtomName
+		);
+
 #endif
 		private static bool ByteArrayCompare(byte[] a1, UInt32 startOffset, byte[] a2, UInt32 compareLength)
 		{
@@ -249,6 +258,23 @@ namespace otloader
 			return false;
 		}
 
+		public static UInt32 GetClientProcessId()
+		{
+#if WIN32
+			IntPtr windowHandle = FindWindow(tibiaClassName, null);
+			if (windowHandle == IntPtr.Zero)
+			{
+				return 0;
+			}
+
+			UInt32 processId;
+			GetWindowThreadProcessId(windowHandle, out processId);
+			return processId;
+#else
+			return (UInt32)PidOf(tibiaWindowName);
+#endif
+		}
+
 		private static IntPtr GetClientProcessHandle()
 		{
 #if WIN32
@@ -260,7 +286,7 @@ namespace otloader
 
 			return OpenProcess(0x1F0FFF, 1, processId);
 #else
-			return (IntPtr)GetProcessId();
+			return (IntPtr)GetClientProcessId();
 #endif
 		}
 
@@ -274,7 +300,7 @@ namespace otloader
 #if WIN32
 			return OpenProcess(0x1F0FFF, 1, processId);
 #else
-			return processId;
+			return (IntPtr)processId;
 #endif
 		}
 
@@ -299,23 +325,6 @@ namespace otloader
 #endif
 
 			return result != 0;
-		}
-
-		public static UInt32 GetClientProcessId()
-		{
-#if WIN32
-			IntPtr windowHandle = FindWindow(tibiaClassName, null);
-			if (windowHandle == IntPtr.Zero)
-			{
-				return 0;
-			}
-
-			UInt32 processId;
-			GetWindowThreadProcessId(windowHandle, out processId);
-			return processId;
-#else
-			return (UInt32)PidOf(tibiaWindowName);
-#endif
 		}
 
 		public static PatchResult PatchMultiClient()
@@ -348,8 +357,11 @@ namespace otloader
 
 			return result;
 #else
-			//TODO
-			return PatchResult.CouldNotPatchMultiClient;
+			if(!ClearAtomOwner(clientAtomName)){
+				return PatchResult.CouldNotPatchMultiClient;
+			}
+
+			return PatchResult.Success;
 #endif
 		}
 
