@@ -24,7 +24,7 @@ namespace otloader
 	{
 		private const string tibiaWindowName = "Tibia";
 		private const string tibiaClassName = "TibiaClient";
-		private const string tibiaRSAClientText = "Symmetric encryption for login server failed";
+		private const string tibiaRSAClientText = "Symmetric encryption";
 
 #if WIN32
 		private const UInt32 tibiaMutexHandle = 0xF8;
