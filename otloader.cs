@@ -285,18 +285,10 @@ namespace otloader
 					}
 				}
 
-				bool patched = false;
-				foreach (string server in clientServerList)
+				PatchResult patchResult = Utils.PatchClientServerList(clientServerList, editServer.Text, port);
+				if (patchResult != PatchResult.Success)
 				{
-					if(Utils.PatchClientServer(server, editServer.Text, port) == PatchResult.Success)
-					{
-						patched = true;
-					}
-				}
-
-				if (!patched)
-				{
-					return PatchResult.CouldNotPatchServerList;
+					return patchResult;
 				}
 			}
 			else if(editServer.Text == prevPatchedServer.name && port == prevPatchedServer.port)

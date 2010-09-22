@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace otloader
 {
@@ -21,8 +22,6 @@ namespace otloader
 
 	class Utils
 	{
-		private static UInt32 hintAddress = 0;
-
 		private const string tibiaWindowName = "Tibia";
 		private const string tibiaClassName = "TibiaClient";
 		private const string tibiaRSAClientText = "Symmetric encryption for login server failed";
@@ -155,6 +154,11 @@ namespace otloader
 			string lpAtomName
 		);
 
+		Int32 CloseHandle(IntPtr hObject)
+		{
+			//do nothing
+		}
+
 #endif
 		private static bool ByteArrayCompare(byte[] a1, UInt32 startOffset, byte[] a2, UInt32 compareLength)
 		{
@@ -197,31 +201,16 @@ namespace otloader
 			
 			return false;
 		}
-		
-		private static bool SearchBytes(IntPtr processHandle, byte[] bytePattern, ref UInt32 hintAddress, out IntPtr outAddress)
+
+		private static bool SearchMemory(IntPtr processHandle, byte[] bytePattern, out IntPtr outAddress)
 		{
 			byte[] buffer = new byte[0x2000 * 32];
-			UInt32 bytesRead = 0;
+			return SearchMemory(processHandle, bytePattern, out outAddress, ref buffer);
+		}
 
+		private static bool SearchMemory(IntPtr processHandle, byte[] bytePattern, out IntPtr outAddress, ref byte[] buffer)
+		{
 			outAddress = IntPtr.Zero;
-			if(hintAddress != 0)
-			{
-				//try a quick search with the help of the hintAddress
-				ReadProcessMemory(processHandle, (IntPtr)hintAddress, buffer, (UInt32)buffer.Length, ref bytesRead);
-				if(bytesRead >= bytePattern.Length)
-				{
-					UInt32 bufferIndex = 0;
-					if(SearchBuffer(buffer, bytesRead, bytePattern, ref bufferIndex))
-					{
-						outAddress = (IntPtr)(hintAddress + bufferIndex);
-						return true;
-					}
-				}
-				
-				hintAddress = 0;
-			}
-
-			//Full memory scan
 			UInt32 addressIndex = 0;
 			UInt32 startAddress = 0;
 			UInt32 endAddress = 0;
@@ -231,10 +220,15 @@ namespace otloader
 				UInt32 readPos = startAddress;
 				do
 				{
-					ReadProcessMemory(processHandle, (IntPtr)readPos, buffer, (UInt32)buffer.Length, ref bytesRead);
-					if(bytesRead < bytePattern.Length)
+					UInt32 bytesRead = 0;
+					if (!ReadMemory(processHandle, (IntPtr)readPos, ref buffer, ref bytesRead))
 					{
-						// Not enough data to search in
+						break;
+					}
+
+					if (bytesRead < bytePattern.Length)
+					{
+						//Not enough data to search in
 						break;
 					}
 					
@@ -300,7 +294,7 @@ namespace otloader
 #endif
 		}
 
-		private static bool PatchMemory(IntPtr processHandle, IntPtr address, byte[] patchBytes, bool removeProtect)
+		private static bool WriteMemory(IntPtr processHandle, IntPtr address, byte[] patchBytes, bool removeProtect)
 		{
 #if WIN32
 			UInt32 lpfOldProtect = 0;
@@ -322,6 +316,12 @@ namespace otloader
 
 #endif
 			return (result != 0);
+		}
+
+		private static bool ReadMemory(IntPtr processHandle, IntPtr readPos, ref byte[] buffer, ref UInt32 bytesRead)
+		{
+			ReadProcessMemory(processHandle, readPos, buffer, (UInt32)buffer.Length, ref bytesRead);
+			return bytesRead > 0;
 		}
 
 		public static bool PatchMultiClient()
@@ -358,6 +358,18 @@ namespace otloader
 #endif
 		}
 
+		public static bool isClientUsingRSA()
+		{
+			IntPtr processHandle = GetClientProcessHandle();
+			if (processHandle == IntPtr.Zero)
+			{
+				return false;
+			}
+
+			IntPtr address;
+			return SearchMemory(processHandle, ToByteArray(tibiaRSAClientText), out address);
+		}
+
 		public static PatchResult PatchClientRSAKey(string oldRSAKey, string newRSAKey)
 		{
 			IntPtr processHandle = GetClientProcessHandle();
@@ -367,35 +379,49 @@ namespace otloader
 			}
 
 			IntPtr address;
-			if (!SearchBytes(processHandle, ToByteArray(oldRSAKey), ref hintAddress, out address))
+			if (!SearchMemory(processHandle, ToByteArray(oldRSAKey), out address))
 			{
-				if (!SearchBytes(processHandle, ToByteArray(newRSAKey), ref hintAddress, out address))
+				if (!SearchMemory(processHandle, ToByteArray(newRSAKey), out address))
 				{
-					#if WIN32
 					CloseHandle(processHandle);
-					#endif
 					return PatchResult.CouldNotFindRSA;
 				}
 
-				#if WIN32
 				CloseHandle(processHandle);
-				#endif
 				return PatchResult.AlreadyPatched;
 			}
 
 			byte[] byteRSAKey = ToByteArray(newRSAKey);
-			if (!PatchMemory(processHandle, address, byteRSAKey, true))
+			if (!WriteMemory(processHandle, address, byteRSAKey, true))
 			{
-				#if WIN32
 				CloseHandle(processHandle);
-				#endif
 				return PatchResult.CouldNotPatchRSA;
 			}
 
-			#if WIN32
 			CloseHandle(processHandle);
-			#endif
 			return PatchResult.Success;
+		}
+
+		private static bool PatchClientServer(IntPtr processHandle, IntPtr address, string newServer, UInt16 port)
+		{
+			byte[] byteNewServer = ToByteArray(newServer);
+			if (byteNewServer.Length < 100)
+			{
+				ResizeByteArray(ref byteNewServer, 100);
+			}
+
+			if (!WriteMemory(processHandle, address, byteNewServer, false))
+			{
+				return false;
+			}
+
+			byte[] bytePort = BitConverter.GetBytes(port);
+			if (!WriteMemory(processHandle, (IntPtr)((Int32)address + byteNewServer.Length), bytePort, false))
+			{
+				return false;
+			}
+
+			return true;
 		}
 
 		public static PatchResult PatchClientServer(string oldServer, string newServer, UInt16 port)
@@ -410,53 +436,125 @@ namespace otloader
 			ResizeByteArray(ref byteOldServer, 100);
 
 			IntPtr address;
-			if (!SearchBytes(processHandle, byteOldServer, ref hintAddress, out address))
+			if (!SearchMemory(processHandle, byteOldServer, out address))
 			{
-				#if WIN32
 				CloseHandle(processHandle);
-				#endif
 				return PatchResult.CouldNotFindServer;
 			}
 
-			byte[] byteNewServer = ToByteArray(newServer);
-			if (byteNewServer.Length < byteOldServer.Length)
+			if (!PatchClientServer(processHandle, address, newServer, port))
 			{
-				ResizeByteArray(ref byteNewServer, byteOldServer.Length);
-			}
-
-			if (!PatchMemory(processHandle, address, byteNewServer, false))
-			{
+				CloseHandle(processHandle);
 				return PatchResult.CouldNotPatchServer;
 			}
 
-			byte[] bytePort = BitConverter.GetBytes(port);
-			if (!PatchMemory(processHandle, (IntPtr)((Int32)address + byteNewServer.Length), bytePort, false))
-			{
-				return PatchResult.CouldNotPatchPort;
-			}
-			
-			if (hintAddress == 0)
-			{
-				hintAddress = ((UInt32)address) - 1000;
-			}
-
-			#if WIN32
 			CloseHandle(processHandle);
-			#endif
 			return PatchResult.Success;
 		}
 
-		public static bool isClientUsingRSA()
+		public static PatchResult PatchClientServerList(List<string> clientServerList, string newServer, UInt16 port)
 		{
 			IntPtr processHandle = GetClientProcessHandle();
 			if (processHandle == IntPtr.Zero)
 			{
-				return false;
+				return PatchResult.CouldNotFindClient;
 			}
 
-			UInt32 dummyAddress = 0;
-			IntPtr address;
-			return SearchBytes(processHandle, ToByteArray(tibiaRSAClientText), ref dummyAddress, out address);
+			byte[] clientServerBuffer = new byte[100];
+			IntPtr firstClientServerAddress = IntPtr.Zero;
+
+			byte[] buffer = new byte[0x2000 * 32];
+			foreach (string clientServer in clientServerList)
+			{
+				byte[] byteOldServer = ToByteArray(clientServer);
+				ResizeByteArray(ref byteOldServer, 100);
+
+				IntPtr address;
+				if (SearchMemory(processHandle, byteOldServer, out address, ref buffer))
+				{
+					//We found a server in the memory, now search backwards
+					//until we find the first server.
+					firstClientServerAddress = address;
+
+					bool foundServer = false;
+					do
+					{
+						//The client structure for a server looks something like (112 bytes)
+						/*
+						struct ClientServer
+						 * {
+						 *		byte[100] server;
+						 *		UInt32 port;
+						 *		UInt32 unknown;  //Usually 1
+						 *		UInt32 unknown;
+						 * };
+						*/
+						UInt32 bytesRead = 0;
+						if (!ReadMemory(processHandle, (IntPtr)((UInt32)firstClientServerAddress - 112), ref clientServerBuffer, ref bytesRead))
+						{
+							break;
+						}
+
+						if (bytesRead < clientServerBuffer.Length)
+						{
+							//Not enough data to search in
+							continue;
+						}
+
+						foundServer = false;
+						foreach (string prevClientServer in clientServerList)
+						{
+							byte[] bytePrevClientServer = ToByteArray(prevClientServer);
+							ResizeByteArray(ref bytePrevClientServer, 100);
+
+							if (ByteArrayCompare(bytePrevClientServer, 0, clientServerBuffer, (UInt32)clientServerBuffer.Length))
+							{
+								firstClientServerAddress = (IntPtr)((UInt32)firstClientServerAddress - 112);
+								foundServer = true;
+								break;
+							}
+						}
+					} while (foundServer);
+					break;
+				}
+			}
+
+			if (firstClientServerAddress != IntPtr.Zero)
+			{
+				IntPtr writeAddress = firstClientServerAddress;
+				bool foundServer = false;
+				bool foundMatch = false;
+				do{
+					UInt32 bytesRead = 0;
+					if (!ReadMemory(processHandle, writeAddress, ref clientServerBuffer, ref bytesRead))
+					{
+						CloseHandle(processHandle);
+						return (foundServer ? PatchResult.Success : PatchResult.CouldNotPatchServerList);
+					}
+
+					foundMatch = false;
+					foreach (string clientServer in clientServerList)
+					{
+						byte[] byteClientServer = ToByteArray(clientServer);
+						ResizeByteArray(ref byteClientServer, 100);
+
+						if (ByteArrayCompare(byteClientServer, 0, clientServerBuffer, (UInt32)clientServerBuffer.Length))
+						{
+							if(PatchClientServer(processHandle, writeAddress, newServer, port)){
+								writeAddress = (IntPtr)((UInt32)writeAddress + 112);
+								foundServer = true;
+								foundMatch = true;
+								break;
+							}
+						}
+					}
+				} while (foundMatch);
+
+				return (foundServer ? PatchResult.Success : PatchResult.CouldNotPatchServerList);
+			}
+
+			CloseHandle(processHandle);
+			return PatchResult.CouldNotPatchServerList;
 		}
 	}
 }
