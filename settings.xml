@@ -17,7 +17,6 @@
       <publickey>142996239624163995200701773828988955507954033454661532174705160829347375827760388829672133862046006741453928458538592179906264509724520840657286865659265687630979195970404721891201847792002125535401292779123937207447574596692788513647179235335529307251350570728407373705564708871762033017096809910315212883967</publickey>
     </publickeys>
     <servers>
-      <server>test.cipsoft.com</server>
       <server>tibia01.cipsoft.com</server>
       <server>tibia02.cipsoft.com</server>
       <server>tibia03.cipsoft.com</server>
@@ -28,6 +27,13 @@
       <server>login03.tibia.com</server>
       <server>login04.tibia.com</server>
       <server>login05.tibia.com</server>
+
+      <!--7.x clients-->
+      <server>test.cipsoft.com</server>
+      <server>server.tibia.com</server>
+      <server>server2.tibia.com</server>
+      <server>tibia1.cipsoft.com</server>
+      <server>tibia2.cipsoft.com</server>
     </servers>
   </client>
 </settings>
