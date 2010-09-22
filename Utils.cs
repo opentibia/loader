@@ -154,9 +154,10 @@ namespace otloader
 			string lpAtomName
 		);
 
-		Int32 CloseHandle(IntPtr hObject)
+		private static Int32 CloseHandle(IntPtr hObject)
 		{
 			//do nothing
+			return 1;
 		}
 
 #endif
@@ -217,14 +218,18 @@ namespace otloader
 
 			while(GetMemoryRange(processHandle, addressIndex, ref startAddress, ref endAddress))
 			{
+				if((endAddress - startAddress) == 0)
+				{
+					//memory range is valid, but not what we are looking for
+					++addressIndex;
+					continue;
+				}
+
 				UInt32 readPos = startAddress;
 				do
 				{
 					UInt32 bytesRead = 0;
-					if (!ReadMemory(processHandle, (IntPtr)readPos, ref buffer, ref bytesRead))
-					{
-						break;
-					}
+					ReadMemory(processHandle, (IntPtr)readPos, ref buffer, ref bytesRead);
 
 					if (bytesRead < bytePattern.Length)
 					{
@@ -321,7 +326,7 @@ namespace otloader
 		private static bool ReadMemory(IntPtr processHandle, IntPtr readPos, ref byte[] buffer, ref UInt32 bytesRead)
 		{
 			ReadProcessMemory(processHandle, readPos, buffer, (UInt32)buffer.Length, ref bytesRead);
-			return bytesRead > 0;
+			return (bytesRead > 0);
 		}
 
 		public static bool PatchMultiClient()
@@ -490,10 +495,7 @@ namespace otloader
 						 * };
 						*/
 						UInt32 bytesRead = 0;
-						if (!ReadMemory(processHandle, (IntPtr)((UInt32)firstClientServerAddress - 112), ref clientServerBuffer, ref bytesRead))
-						{
-							break;
-						}
+						ReadMemory(processHandle, (IntPtr)((UInt32)firstClientServerAddress - 112), ref clientServerBuffer, ref bytesRead);
 
 						if (bytesRead < clientServerBuffer.Length)
 						{

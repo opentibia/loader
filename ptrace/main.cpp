@@ -27,7 +27,7 @@ extern "C" int ReadProcessMemory(
 	waitpid(pid, NULL, WUNTRACED);
 
 	*lpNumberOfBytesRead = 0;
-	int peekData;
+	long peekData;
 	for(unsigned int i = 0; i <= nSize - sizeof(peekData); i += sizeof(peekData)){
 		unsigned long addrPtr = lpBaseAddress + i;
 		errno = 0;
@@ -75,13 +75,19 @@ extern "C" int WriteProcessMemory(
 	waitpid(pid, NULL, WUNTRACED);
 
 	*lpNumberOfBytesWritten = 0;
-	unsigned char pokeByte;
-	for(unsigned int i = 0; i < nSize; i += sizeof(pokeByte)){
-		memcpy(&pokeByte, &lpBuffer[i], 1);
+	
+	int longCount = nSize / sizeof(long);
+	long pokeData;
+	
+	unsigned char* buffer = lpBuffer;
+	
+	unsigned int i = 0;
+	while(i < longCount)
+	{
+		memcpy(&pokeData, buffer, sizeof(long));
 		
-		unsigned long addrPtr = lpBaseAddress + i;
 		errno = 0;
-		if(ptrace(PTRACE_POKEDATA, pid, (void*)addrPtr, pokeByte) < 0 && errno){
+		if(ptrace(PTRACE_POKEDATA, pid, lpBaseAddress + i * 4, pokeData) < 0 && errno){
 			ptrace(PTRACE_DETACH, pid, NULL, NULL);
 #if DEBUG
 			perror("PTRACE_POKEDATA");
@@ -89,9 +95,29 @@ extern "C" int WriteProcessMemory(
 			return 0;
 		}
 		
-		(*lpNumberOfBytesWritten) += sizeof(pokeByte);
+		++i;
+		buffer += sizeof(long);		
+		(*lpNumberOfBytesWritten) += sizeof(long);
 	}
-
+	
+	int remainder = nSize % sizeof(long);
+	if(remainder != 0)
+	{
+		pokeData = 0;
+		memcpy(&pokeData, buffer, remainder);
+		
+		errno = 0;
+		if(ptrace(PTRACE_POKEDATA, pid, lpBaseAddress + i * 4, pokeData) < 0 && errno){
+			ptrace(PTRACE_DETACH, pid, NULL, NULL);
+#if DEBUG
+			perror("PTRACE_POKEDATA");
+#endif
+			return 0;
+		}
+		
+		(*lpNumberOfBytesWritten) += remainder;
+	}
+	
 	errno = 0;
 	if(ptrace(PTRACE_DETACH, pid, NULL, NULL) == -1){
 #if DEBUG
@@ -152,11 +178,18 @@ extern "C" bool GetMemoryRange(int pid, unsigned int index, unsigned int* nStart
 		(unsigned char*)&phdr,
 		sizeof(Elf32_Phdr),
 		&bytesRead);
-		
-	*nStartAddress = phdr.p_vaddr;
-	*nEndAddress = phdr.p_vaddr + phdr.p_memsz;
-										
-	return ((*nEndAddress) - (*nStartAddress)) > 0;
+
+	if(phdr.p_type == PT_LOAD){
+		//This section contains the information we are interested in
+		*nStartAddress = phdr.p_vaddr;
+		*nEndAddress = phdr.p_vaddr + phdr.p_memsz;
+	}
+	else{
+		*nStartAddress = 0;
+		*nEndAddress = 0;
+	}
+
+	return true;
 }
 
 extern "C" bool ClearAtomOwner(const char* atomName)
