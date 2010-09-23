@@ -16,6 +16,8 @@ extern "C" int ReadProcessMemory(
 	unsigned int nSize,
 	unsigned int* lpNumberOfBytesRead)
 {
+	*lpNumberOfBytesRead = 0;
+	
 	errno = 0;
 	if(ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0){
 #if DEBUG
@@ -26,12 +28,36 @@ extern "C" int ReadProcessMemory(
 	
 	waitpid(pid, NULL, WUNTRACED);
 
-	*lpNumberOfBytesRead = 0;
 	long peekData;
-	for(unsigned int i = 0; i <= nSize - sizeof(peekData); i += sizeof(peekData)){
-		unsigned long addrPtr = lpBaseAddress + i;
+	
+	unsigned char* buffer = lpBuffer;
+
+	unsigned int i = 0;
+	int longCount = nSize / sizeof(peekData);
+	while(i < longCount)
+	{
 		errno = 0;
-		peekData = ptrace(PTRACE_PEEKDATA, pid, (void*)addrPtr, NULL);
+		peekData = ptrace(PTRACE_PEEKDATA, pid, lpBaseAddress + i * sizeof(peekData), NULL);
+		
+		if(peekData == -1 && errno)
+		{
+			ptrace(PTRACE_DETACH, pid, NULL, NULL);
+#if DEBUG
+			perror("PTRACE_PEEKDATA");
+#endif
+			return 0;
+		}
+		memcpy(buffer, &peekData, sizeof(peekData));
+		(*lpNumberOfBytesRead) += sizeof(peekData);
+
+		++i;
+		buffer += sizeof(peekData);
+	}
+	
+	int remainder = nSize % sizeof(peekData);
+	if(remainder != 0){
+		errno = 0;
+		peekData = ptrace(PTRACE_PEEKDATA, pid, lpBaseAddress + i * sizeof(peekData), NULL);
 		
 		if(peekData == -1 && errno)
 		{
@@ -42,8 +68,8 @@ extern "C" int ReadProcessMemory(
 			return 0;
 		}
 		
-		memcpy(lpBuffer + i, &peekData, sizeof(peekData));
-		(*lpNumberOfBytesRead) += sizeof(peekData);
+		memcpy(buffer, &peekData, remainder);
+		(*lpNumberOfBytesRead) += remainder;
 	}
 
 	errno = 0;
@@ -64,7 +90,9 @@ extern "C" int WriteProcessMemory(
 	unsigned int nSize,
 	unsigned int* lpNumberOfBytesWritten)
 {
-	errno = 0;
+	*lpNumberOfBytesWritten = 0;
+
+		errno = 0;
 	if(ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0){
 #if DEBUG
 		perror("PTRACE_ATTACH");
@@ -73,21 +101,19 @@ extern "C" int WriteProcessMemory(
 	}
 	
 	waitpid(pid, NULL, WUNTRACED);
-
-	*lpNumberOfBytesWritten = 0;
 	
-	int longCount = nSize / sizeof(long);
 	long pokeData;
 	
 	unsigned char* buffer = lpBuffer;
 	
 	unsigned int i = 0;
+	int longCount = nSize / sizeof(pokeData);
 	while(i < longCount)
 	{
-		memcpy(&pokeData, buffer, sizeof(long));
+		memcpy(&pokeData, buffer, sizeof(pokeData));
 		
 		errno = 0;
-		if(ptrace(PTRACE_POKEDATA, pid, lpBaseAddress + i * 4, pokeData) < 0 && errno){
+		if(ptrace(PTRACE_POKEDATA, pid, lpBaseAddress + i * sizeof(pokeData), pokeData) < 0 && errno){
 			ptrace(PTRACE_DETACH, pid, NULL, NULL);
 #if DEBUG
 			perror("PTRACE_POKEDATA");
@@ -96,18 +122,18 @@ extern "C" int WriteProcessMemory(
 		}
 		
 		++i;
-		buffer += sizeof(long);		
-		(*lpNumberOfBytesWritten) += sizeof(long);
+		buffer += sizeof(pokeData);		
+		(*lpNumberOfBytesWritten) += sizeof(pokeData);
 	}
 	
-	int remainder = nSize % sizeof(long);
+	int remainder = nSize % sizeof(pokeData);
 	if(remainder != 0)
 	{
 		pokeData = 0;
 		memcpy(&pokeData, buffer, remainder);
 		
 		errno = 0;
-		if(ptrace(PTRACE_POKEDATA, pid, lpBaseAddress + i * 4, pokeData) < 0 && errno){
+		if(ptrace(PTRACE_POKEDATA, pid, lpBaseAddress + i * sizeof(pokeData), pokeData) < 0 && errno){
 			ptrace(PTRACE_DETACH, pid, NULL, NULL);
 #if DEBUG
 			perror("PTRACE_POKEDATA");
