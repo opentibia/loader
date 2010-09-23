@@ -25,6 +25,7 @@ namespace otloader
 		private const string tibiaWindowName = "Tibia";
 		private const string tibiaClassName = "TibiaClient";
 		private const string tibiaRSAClientText = "Symmetric encryption";
+		private static byte[] readBuffer = new byte[0x2000 * 32];
 		private static MemoryStream memoryStream = new MemoryStream(1024 * 1024 * 4);
 		private static IntPtr memoryStreamOwnerHandle = IntPtr.Zero;
 
@@ -352,16 +353,15 @@ namespace otloader
 
 		private static bool SearchMemory(IntPtr processHandle, byte[] bytePattern, out IntPtr outAddress)
 		{
-			byte[] buffer = new byte[0x2000 * 32];
-			return SearchMemory(processHandle, bytePattern, out outAddress, ref buffer);
+			return SearchMemory(processHandle, bytePattern, out outAddress, ref readBuffer);
 		}
 
 		private static bool SearchMemory(IntPtr processHandle, byte[] bytePattern, out IntPtr outAddress, ref byte[] buffer)
 		{
 			if (memoryStreamOwnerHandle != processHandle)
 			{
-				memoryStream.Dispose();
-				memoryStream = new MemoryStream(1024 * 1024 * 4);
+				memoryStream.Position = 0;
+				memoryStream.SetLength(0);
 				memoryStreamOwnerHandle = processHandle;
 			}
 
@@ -467,11 +467,13 @@ namespace otloader
 		{
 			isMemStream = false;
 			UInt32 relPos = ((UInt32)readPos) - baseAddress;
-			if (memoryStream.Length > relPos + buffer.Length)
+			if (memoryStream.Length > relPos)
 			{
 				isMemStream = true;
 				memoryStream.Seek(relPos, SeekOrigin.Begin);
-				bytesRead = (UInt32)memoryStream.Read(buffer, 0, (Int32)buffer.Length);
+
+				Int32 maxReadMemStream = Math.Min((Int32)buffer.Length, ((Int32)memoryStream.Length) - (Int32)relPos);
+				bytesRead = (UInt32)memoryStream.Read(buffer, 0, maxReadMemStream);
 				if (bytesRead >= buffer.Length)
 				{
 					return true;
