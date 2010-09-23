@@ -467,13 +467,12 @@ namespace otloader
 		{
 			isMemStream = false;
 			UInt32 relPos = ((UInt32)readPos) - baseAddress;
-			if (memoryStream.Length > relPos)
+			if (memoryStream.Length > relPos + buffer.Length)
 			{
 				isMemStream = true;
 				memoryStream.Seek(relPos, SeekOrigin.Begin);
 
-				Int32 maxReadMemStream = Math.Min((Int32)buffer.Length, ((Int32)memoryStream.Length) - (Int32)relPos);
-				bytesRead = (UInt32)memoryStream.Read(buffer, 0, maxReadMemStream);
+				bytesRead = (UInt32)memoryStream.Read(buffer, 0, buffer.Length);
 				if (bytesRead >= buffer.Length)
 				{
 					return true;
