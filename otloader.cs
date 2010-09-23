@@ -1,9 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace otloader
@@ -264,7 +260,7 @@ namespace otloader
 						toolTip.Show("Unable to patch multi client.", checkBoxMultiClientPatch, 5000);
 				}
 
-				if(Utils.isClientUsingRSA())
+				if (Utils.isClientUsingRSA())
 				{
 					PatchResult result = PatchResult.Dummy;
 					foreach (string RSAKey in clientRSAKeys)
@@ -285,17 +281,25 @@ namespace otloader
 					}
 				}
 
-				PatchResult patchResult = Utils.PatchClientServerList(clientServerList, editServer.Text, port);
-				if (patchResult != PatchResult.Success)
+				bool patched = false;
+				foreach (string server in clientServerList)
 				{
-					return patchResult;
+					if (Utils.PatchClientServer(server, editServer.Text, port) == PatchResult.Success)
+					{
+						patched = true;
+					}
+				}
+
+				if (!patched)
+				{
+					return PatchResult.CouldNotPatchServerList;
 				}
 			}
-			else if(editServer.Text == prevPatchedServer.name && port == prevPatchedServer.port)
+			else if (editServer.Text == prevPatchedServer.name && port == prevPatchedServer.port)
 			{
 				return PatchResult.AlreadyPatched;
 			}
-			else if(Utils.PatchClientServer(prevPatchedServer.name, editServer.Text, port) != PatchResult.Success)
+			else if (Utils.PatchClientServer(prevPatchedServer.name, editServer.Text, port, true) != PatchResult.Success)
 			{
 				return PatchResult.CouldNotPatchServer;
 			}
