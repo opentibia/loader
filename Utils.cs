@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace otloader
 {
@@ -26,8 +27,8 @@ namespace otloader
 		private const string tibiaClassName = "TibiaClient";
 		private const string tibiaRSAClientText = "Symmetric encryption";
 		private static byte[] readBuffer = new byte[0x2000 * 32];
-		private static MemoryStream memoryStream = new MemoryStream(1024 * 1024 * 4);
-		private static IntPtr memoryStreamOwnerHandle = IntPtr.Zero;
+		private static Dictionary<UInt32, byte[]> memoryBuffer = new Dictionary<UInt32, byte[]>();
+		private static IntPtr memoryBufferOwnerHandle = IntPtr.Zero;
 
 #if WIN32
 		private const UInt32 tibiaMutexHandle = 0xF8;
@@ -358,11 +359,10 @@ namespace otloader
 
 		private static bool SearchMemory(IntPtr processHandle, byte[] bytePattern, out IntPtr outAddress, ref byte[] buffer)
 		{
-			if (memoryStreamOwnerHandle != processHandle)
+			if (memoryBufferOwnerHandle != processHandle)
 			{
-				memoryStream.Position = 0;
-				memoryStream.SetLength(0);
-				memoryStreamOwnerHandle = processHandle;
+				memoryBuffer.Clear();
+				memoryBufferOwnerHandle = processHandle;
 			}
 
 			outAddress = IntPtr.Zero;
@@ -380,25 +380,32 @@ namespace otloader
 					continue;
 				}
 
-				bool isMemStream;
 				UInt32 readPos = startAddress;
 				do
 				{
 					UInt32 bytesRead = 0;
-					ReadMemory(processHandle, (IntPtr)readPos, ref buffer, ref bytesRead, out isMemStream);
 
-					if (bytesRead < bytePattern.Length)
-					{
-						//Not enough data to search in
-						break;
+					byte[] memBuffer;
+					if(memoryBuffer.TryGetValue(readPos, out memBuffer) && memBuffer.Length > 0){
+						//Memory stored buffer
+						Buffer.BlockCopy(memBuffer, 0, buffer, 0, memBuffer.Length);
+						bytesRead = (UInt32)buffer.Length;
+					}
+					else{
+						ReadMemory(processHandle, (IntPtr)readPos, ref buffer, ref bytesRead);
+
+						if (bytesRead < bytePattern.Length)
+						{
+							//Not enough data to search in
+							break;
+						}
+
+						//Store it in memory for faster access
+						memBuffer = new byte[bytesRead];
+						Buffer.BlockCopy(buffer, 0, memBuffer, 0, (Int32)bytesRead);
+						memoryBuffer.Add(readPos, memBuffer);
 					}
 
-					if (!isMemStream)
-					{
-						memoryStream.Position = readPos - baseAddress;
-						memoryStream.Write(buffer, 0, (Int32)bytesRead);
-					}
-					
 					UInt32 bufferIndex = 0;
 					if(SearchBuffer(buffer, bytesRead, bytePattern, ref bufferIndex))
 					{
@@ -451,8 +458,23 @@ namespace otloader
 			const uint PAGE_EXECUTE_READWRITE = 0x40;
 			VirtualProtectEx(processHandle, address, (UIntPtr)patchBytes.Length, PAGE_EXECUTE_READWRITE, out lpfOldProtect);
 #endif
-			memoryStream.Position = ((UInt32)address) - baseAddress;
-			memoryStream.Write(patchBytes, 0, (Int32)patchBytes.Length);
+			//Remove memory buffered areas that will be out of sync so we invalidate them
+			List<UInt32> toRemoveList = new List<UInt32>();
+			UInt32 nAddress = (UInt32)address;
+			foreach(KeyValuePair<UInt32, byte[]> kvp in memoryBuffer)
+			{
+				//memory buffer ranges from kvp.Key to (kvp.Key + kvp.Value)
+				if((nAddress >= kvp.Key && nAddress <= (kvp.Key + kvp.Value.Length)) ||
+				   (nAddress + patchBytes.Length >= kvp.Key && nAddress + patchBytes.Length <= (kvp.Key + kvp.Value.Length)) )
+				{
+					toRemoveList.Add(kvp.Key);
+				}
+			}
+
+			foreach(UInt32 key in toRemoveList)
+			{
+				memoryBuffer.Remove(key);
+			}
 
 			UInt32 bytesWritten = 0;
 			Int32 result = WriteProcessMemory(processHandle, address, patchBytes, (UInt32)patchBytes.Length, ref bytesWritten);
@@ -463,22 +485,8 @@ namespace otloader
 			return (result != 0);
 		}
 
-		private static bool ReadMemory(IntPtr processHandle, IntPtr readPos, ref byte[] buffer, ref UInt32 bytesRead, out bool isMemStream)
+		private static bool ReadMemory(IntPtr processHandle, IntPtr readPos, ref byte[] buffer, ref UInt32 bytesRead)
 		{
-			isMemStream = false;
-			UInt32 relPos = ((UInt32)readPos) - baseAddress;
-			if (memoryStream.Length > relPos + buffer.Length)
-			{
-				isMemStream = true;
-				memoryStream.Seek(relPos, SeekOrigin.Begin);
-
-				bytesRead = (UInt32)memoryStream.Read(buffer, 0, buffer.Length);
-				if (bytesRead >= buffer.Length)
-				{
-					return true;
-				}
-			}
-
 			ReadProcessMemory(processHandle, readPos, buffer, (UInt32)buffer.Length, ref bytesRead);
 			return (bytesRead > 0);
 		}
@@ -497,6 +505,7 @@ namespace otloader
 			}
 
 			byte[] bytePort = BitConverter.GetBytes(port);
+			ResizeByteArray(ref bytePort, 4);
 			if (!WriteMemory(processHandle, (IntPtr)((Int32)address + byteNewServer.Length), bytePort))
 			{
 				return false;

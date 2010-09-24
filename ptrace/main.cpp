@@ -129,8 +129,39 @@ extern "C" int WriteProcessMemory(
 	int remainder = nSize % sizeof(pokeData);
 	if(remainder != 0)
 	{
+		//the remaining data is smaller than pokeData (4 bytes on x32 and 8 bytes on x64 bit systems)
+		//so we read in sizeof(word) bytes, clearing the bits that we want to update
+		//then OR:ing it with the new data and write it back.
+		long peekData = ptrace(PTRACE_PEEKDATA, pid, lpBaseAddress + i * sizeof(peekData), NULL);
+		
+		//there is probably a better way to do this, but oh well...
+		if(sizeof(pokeData) == 4){
+			switch(remainder)
+			{
+				case 1: peekData = peekData & 0xFFFFFF00; break;
+				case 2: peekData = peekData & 0xFFFF0000; break;
+				case 3: peekData = peekData & 0xFF000000; break;
+				default: break;
+			}
+		}
+		else if(sizeof(pokeData) == 8){
+			switch(remainder)
+			{
+				case 1: peekData = peekData & 0xFFFFFFFFFFFFFF00; break;
+				case 2: peekData = peekData & 0xFFFFFFFFFFFF0000; break;
+				case 3: peekData = peekData & 0xFFFFFFFFFF000000; break;
+				case 4: peekData = peekData & 0xFFFFFFFF00000000; break;
+				case 5: peekData = peekData & 0xFFFFFF0000000000; break;
+				case 6: peekData = peekData & 0xFFFF000000000000; break;
+				case 7: peekData = peekData & 0xFF00000000000000; break;
+				default: break;
+			}
+		}
+		
 		pokeData = 0;
 		memcpy(&pokeData, buffer, remainder);
+		
+		pokeData = peekData | pokeData;
 		
 		errno = 0;
 		if(ptrace(PTRACE_POKEDATA, pid, lpBaseAddress + i * sizeof(pokeData), pokeData) < 0 && errno){
