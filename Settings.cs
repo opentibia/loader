@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Xml;
+using System.IO;
 using System.Windows.Forms;
 using System.Collections.Generic;
 
@@ -47,12 +48,24 @@ namespace otloader
 		{
 		}
 
+		public string GetAppDataPath()
+		{
+			string appPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "otloader");
+			System.IO.Directory.CreateDirectory(appPath);
+			return appPath;
+		}
+
 		public bool Load()
 		{
-			string path = (System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), SettingFilename));
+			string fullPathFilename = Path.Combine(GetAppDataPath(), SettingFilename);
+			if (!File.Exists(fullPathFilename))
+			{
+				fullPathFilename = (Path.Combine(Directory.GetCurrentDirectory(), SettingFilename));
+			}
+
 			try
 			{
-				xmlDocument.Load(path);
+				xmlDocument.Load(fullPathFilename);
 				return true;
 			}
 			catch
@@ -64,7 +77,8 @@ namespace otloader
 
 		public void Save()
 		{
-			xmlDocument.Save(SettingFilename);
+			string fullPathFilename = Path.Combine(GetAppDataPath(), SettingFilename);
+			xmlDocument.Save(fullPathFilename);
 		}
 
 		public string OtservRSAKey
