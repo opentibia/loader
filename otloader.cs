@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using System.Drawing;
 
 namespace otloader
 {
@@ -23,9 +24,22 @@ namespace otloader
 			InitializeComponent();
 		}
 
+		public bool IsPointWithinScreenBounds(Point thePoint)
+		{
+			for (int i = 0; i < Screen.AllScreens.Length; i++)
+			{
+				if (Screen.AllScreens[i].Bounds.Contains(thePoint))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		private void FormOtloader_Load(object sender, EventArgs e)
 		{
-			if (Properties.Settings.Default.Location.X != 0)
+			if (IsPointWithinScreenBounds(Properties.Settings.Default.Location))
 			{
 				base.Location = Properties.Settings.Default.Location;
 			}
@@ -87,8 +101,11 @@ namespace otloader
 				settings.MultiClientPatch = checkBoxMultiClientPatch.Checked;
 				settings.Save();
 
-				Properties.Settings.Default.Location = base.DesktopBounds.Location;
-				Properties.Settings.Default.Save();
+				if(IsPointWithinScreenBounds(this.Location))
+				{
+					Properties.Settings.Default.Location = this.Location;
+					Properties.Settings.Default.Save();
+				}
 			}
 		}
 
