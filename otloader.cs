@@ -55,6 +55,7 @@ namespace otloader
 
 			if (!settings.Load())
 			{
+                // Let user select settings.xml location
 				FolderBrowserDialog dlg = new FolderBrowserDialog();
 				dlg.SelectedPath = Application.StartupPath;
 				dlg.ShowNewFolderButton = false;
@@ -66,6 +67,7 @@ namespace otloader
 					if (res != DialogResult.OK)
 					{
 						Application.Exit();
+                        return;
 					}
 
 					System.IO.Directory.SetCurrentDirectory(dlg.SelectedPath);

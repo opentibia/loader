@@ -3,6 +3,7 @@ using System.Xml;
 using System.IO;
 using System.Windows.Forms;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace otloader
 {
@@ -55,25 +56,35 @@ namespace otloader
 			return appPath;
 		}
 
-		public bool Load()
-		{
-			string fullPathFilename = Path.Combine(GetAppDataPath(), SettingFilename);
-			if (!File.Exists(fullPathFilename))
-			{
-				fullPathFilename = (Path.Combine(Directory.GetCurrentDirectory(), SettingFilename));
-			}
+        public bool Load()
+        {
+            string fullPathFilename = Path.Combine(GetAppDataPath(), SettingFilename);
+            if (!File.Exists(fullPathFilename))
+            {
+                fullPathFilename = (Path.Combine(Directory.GetCurrentDirectory(), SettingFilename));
+            }
 
-			try
-			{
-				xmlDocument.Load(fullPathFilename);
-				return true;
-			}
-			catch
-			{
-				xmlDocument.LoadXml("<settings></settings>");
-				return false;
-			}
-		}
+            try
+            {
+                xmlDocument.Load(fullPathFilename);
+                return true;
+            }
+            catch
+            {
+                // Load settings from this assembly
+                try
+                {
+                    Assembly thisProgram = Assembly.GetExecutingAssembly();
+                    Stream sstream = thisProgram.GetManifestResourceStream("otloader.settings.xml");
+                    xmlDocument.Load(sstream);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
 
 		public void Save()
 		{
