@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "otloader", "otloader.csproj", "{508BCFD1-628A-49FF-818A-F17B3A31F765}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "otloader", "Source\otloader.csproj", "{508BCFD1-628A-49FF-818A-F17B3A31F765}"
 EndProject
-Project("{2857B73E-F847-4B02-9238-064979017E93}") = "ptrace", "ptrace\ptrace.cproj", "{BDFC885E-7F81-4836-8006-DE20A00F6EF4}"
+Project("{2857B73E-F847-4B02-9238-064979017E93}") = "ptrace", "Source\ptrace\ptrace.cproj", "{BDFC885E-7F81-4836-8006-DE20A00F6EF4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
